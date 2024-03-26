@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "seven-degrees-of-torvalds"
+version = "0.1.0"
+description = ""
+authors = ["tobiadefami <tobiadefami@gmail.com>"]
+readme = "README.md"
+packages = [{include = "seven_degrees_of_torvalds"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "^2.31.0"
+ipdb = "^0.13.13"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
