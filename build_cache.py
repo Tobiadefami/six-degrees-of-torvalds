@@ -19,22 +19,25 @@ async def build_cache(session: aiohttp.ClientSession, depth: int = 2) -> PathMap
     visited: set[User] = set()
     while frontier:
         current_path = frontier.pop(0)
-        if (len(current_path) - 1) > depth:
-            continue
-        user, repos = current_path[-1]
-        if user in visited:
-            continue
-        visited.add(user)
+        user, _ = current_path[-1]
+        collabs = await get_collaborators(user, session=session)
+        new_paths = [
+            current_path + [(collaborator, list(repos))]
+            for collaborator, repos in collabs.items()
+        ]
+
+        for new_path in new_paths:
+            last_state = new_path[-1]
+            user, _ = last_state
+            if user not in visited:
+                paths[user] = new_path
+                visited.add(user)
+
+                if len(new_path) <= depth:
+                    frontier.append(new_path)
+
         print(f"Visited {len(visited)} users")
-        if user not in paths:
-            paths[user] = current_path
-            collabs = await get_collaborators(user, session=session)
-            frontier.extend(
-                [
-                    current_path + [(collaborator, list(repos))]
-                    for collaborator, repos in collabs.items()
-                ]
-            )
+
     return paths
 
 
