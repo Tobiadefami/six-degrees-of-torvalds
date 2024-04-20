@@ -31,6 +31,8 @@ async def get_contributors(
 
     async with session.get(url, headers=headers) as response:
         print(f"Get contributors for {repository_full_name}: {response.status}")
+        if response.status in (403,):
+            print(await response.json())
         if response.status in (204, 403, 404, 451):
             return []
         if response.status != 200:
@@ -69,6 +71,8 @@ async def get_repositories_by_user(
     results = []
     async with session.get(url, headers=headers) as response:
         print(f"Getting repos for {user_name}: {response.status}")
+        if response.status in (403,):
+            print(await response.json())
         if response.status in (204, 403, 404):
             return []
 

@@ -13,7 +13,7 @@ Path: TypeAlias = list[Pair]
 PathMap: TypeAlias = dict[User, Path]
 
 
-async def build_cache(session: aiohttp.ClientSession, depth: int = 2) -> PathMap:
+async def build_cache(session: aiohttp.ClientSession, depth: int = 3) -> PathMap:
     paths: PathMap = {}
     frontier: list[Path] = [[("torvalds", None)]]
     visited: set[User] = set()
