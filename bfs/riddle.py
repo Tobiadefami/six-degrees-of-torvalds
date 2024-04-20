@@ -66,26 +66,20 @@ def get_next_states(state):
                 next_states.append(new_state)
     return next_states
 
-    
+
 def bfs(current_state, is_goal, get_next_states):
     frontier = [(current_state, [])]  # Track path as a list of states
-    visited = set()  # Keep track of visited states to avoid loops
     while frontier:
         current_state, path = frontier.pop(0)
         if is_goal(current_state):
             return path + [current_state]  # Return the path including the goal state
-        # Convert state to a hashable tuple for tracking visited states.
-        state_tuple = tuple(sorted(current_state.items()))
-        if state_tuple in visited:
-            continue
-        visited.add(state_tuple)
+
         for next_state in get_next_states(current_state):
             new_path = path + [current_state]  # Append current state to new path
             frontier.append((next_state, new_path))
     return None
 
 
-# Example usage
 if __name__ == "__main__":
     solution_path = bfs(current_state, is_goal, get_next_states)
     if solution_path:
