@@ -1,7 +1,7 @@
 from typing import Callable
 
 import pytest
-
+import time
 # chess puzzle
 
 # how do i represent the state of the system?
@@ -11,13 +11,13 @@ import pytest
 
 # # # # # # # #
 """
-0 # 2 # # # # #
+0 # # # # # # #
+# # 1 # # # # #
 # # # # # # # #
-# 1 # 3 # # # #
-# # # # # # # #
+# 2 # # # # # #
+# # # 3 # # # #
+# # # # # # 5 #
 # # # # 4 # # #
-# # # # # # # #
-# # # # # 5 # #
 # # # # # # # 6
 """
 
@@ -39,42 +39,45 @@ def is_valid_coordinate(coordinate: int) -> bool:
 
 
 # def is_valid_square(square: Square) -> bool:
-#     # example square: (8, 0)
-#     # return True if both coordinates are greater than 0 and less than 7 otherwise return False
 #     return all([is_valid_coordinate(coordinate) for coordinate in square])
 
-def is_valid_square(square: Square) -> bool:
-    for coord in square:
-        if not is_valid_coordinate(coord):
-            return False
-    return True
+def is_valid_square(square):
+    valid = True
+    for coordinate in square:
+        if not is_valid_coordinate(coordinate):
+            valid = False   
+    return valid
 
 def get_next_squares(current_square: Square) -> list[Square]:
     directions = [
         (-2, -1),
-        (-2, 1),
-        (2, 1),
-        (2, -1),
         (-1, 2),
-        (-1, -2),
-        (1, 2),
         (1, -2),
+        (2, 1),
+        (1, 2),
+        (-1, -2),
+        (2, -1),
+        (-2, 1),
     ]
-    possible_next_squares = [
-        (current_square[0] + direction[0], current_square[1] + direction[1])
+    next_suqares = [
+        (current_square[0] + direction[0], current_square[1]+direction[1])
         for direction in directions
     ]
-    filtered_next_squares = [
-        square for square in possible_next_squares if is_valid_square(square)
+    
+    valid_squares = [
+        square for square in next_suqares if is_valid_square(square)
     ]
-    return filtered_next_squares
+    return valid_squares
 
 
 def get_next_paths(current_path: Path) -> list[Path]:
     current_square = current_path[-1]
+    
+    valid_squares = get_next_squares(current_square)
+    
     return [
-        current_path + [next_square] for next_square in get_next_squares(current_square)
-    ]
+        current_path + [square] for square in valid_squares
+    ]        
 
 
 def bfs(
@@ -82,13 +85,13 @@ def bfs(
     is_goal: Callable[[Path], bool],
     get_next_paths: Callable[[Path], list[Path]],
 ):
-    frontier: list[Path] = [current_state]
-    while path := frontier.pop(0):
-        if is_goal(path):
-            return path
-        frontier.extend(get_next_paths(path))
-    return None
-
+    frontier = [current_state]
+    while current_path := frontier.pop(0):
+        if is_goal(current_path):
+            return current_path
+        
+        frontier.extend(get_next_paths(current_path))
+    return []   
 
 @pytest.mark.parametrize(
     "square,valid",
