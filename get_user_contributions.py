@@ -32,7 +32,10 @@ async def get_contributors(
     async with session.get(url, headers=headers) as response:
         print(f"Get contributors for {repository_full_name}: {response.status}")
         if response.status in (403,):
-            print(await response.json())
+            json_response = await response.json()
+            if "too large" in json_response.get("message"):
+                return await get_recent_committers(repository_full_name, session)
+            return []
         if response.status in (204, 403, 404, 451):
             return []
         if response.status != 200:
@@ -46,6 +49,41 @@ async def get_contributors(
             for contrib in contributors
             if contrib["login"] not in EXCLUDE
         ]
+
+
+async def get_recent_committers(
+    repository_full_name: str, session: aiohttp.client.ClientSession = None
+) -> list[str]:
+    # TODO: check larger number of commits
+    url = f"https://api.github.com/repos/{repository_full_name}/commits?per_page=100"
+    await rate_limiter.wait()
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {GITHUB_API_KEY}",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    async with session.get(url, headers=headers) as response:
+        print(f"Get recent committers for {repository_full_name}: {response.status}")
+        if response.status in (403,):
+            print(await response.json())
+        if response.status in (204, 403, 404, 451):
+            return []
+        if response.status != 200:
+            print(response.status)
+            raise Exception(response.content)
+
+        commits = await response.json()
+
+        contributors = []
+        for commit in commits:
+            login = (commit.get("author") or {}).get("login")
+            if login is None:
+                login = (commit.get("committer") or {}).get("login")
+            if login is not None:
+                contributors.append(login)
+        return list(set(contributors))
 
 
 async def get_repositories_by_user(
