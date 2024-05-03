@@ -6,6 +6,7 @@ from collections import defaultdict
 from pprint import pprint
 
 import aiohttp
+import time
 
 from rate_limiter import RateLimiter
 
@@ -14,7 +15,7 @@ NEXT_PATTERN = re.compile(r'(?<=<)([\S]*)(?=>; rel="next")', re.IGNORECASE)
 
 rate_limiter = RateLimiter(max_requests=900, period=60)
 
-EXCLUDE = {"gitter-badger"}
+EXCLUDE = {"gitter-badger", "dependabot[bot]", "renovate[bot]"}
 
 
 async def get_contributors(
@@ -28,27 +29,32 @@ async def get_contributors(
         "Authorization": f"Bearer {GITHUB_API_KEY}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
+    while True:
+        async with session.get(url, headers=headers) as response:
+            print(f"Get contributors for {repository_full_name}: {response.status}")
+            if response.status in (403,):
+                json_response = await response.json()
+                if "too large" in json_response.get("message"):
+                    return await get_recent_committers(repository_full_name, session)
+                
+                if "rate limit" in json_response.get("message", ""):
+                    await RateLimiter.handle_rate_limit(response)
+                    continue                
+                return []
 
-    async with session.get(url, headers=headers) as response:
-        print(f"Get contributors for {repository_full_name}: {response.status}")
-        if response.status in (403,):
-            json_response = await response.json()
-            if "too large" in json_response.get("message"):
-                return await get_recent_committers(repository_full_name, session)
-            return []
-        if response.status in (204, 403, 404, 451):
-            return []
-        if response.status != 200:
-            print(response.status)
-            raise Exception(response.content)
+            if response.status in (204, 403, 404, 451):
+                return []
+            if response.status != 200:
+                print(response.status)
+                raise Exception(response.content)
 
-        contributors = await response.json()
+            contributors = await response.json()
 
-        return [
-            contrib["login"]
-            for contrib in contributors
-            if contrib["login"] not in EXCLUDE
-        ]
+            return [
+                contrib["login"]
+                for contrib in contributors
+                if contrib["login"] not in EXCLUDE
+            ]
 
 
 async def get_recent_committers(
@@ -63,27 +69,31 @@ async def get_recent_committers(
         "Authorization": f"Bearer {GITHUB_API_KEY}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
+    while True:
+        async with session.get(url, headers=headers) as response:
+            print(f"Get recent committers for {repository_full_name}: {response.status}")
+            if response.status in (403,):
+                print(await response.json())
+                json_response = await response.json()
+                if "rate limit" in json_response.get("message", ""):
+                    await RateLimiter.handle_rate_limit(response=response)
+                    continue
+            if response.status in (204, 403, 404, 451):
+                return []
+            if response.status != 200:
+                print(response.status)
+                raise Exception(response.content)
 
-    async with session.get(url, headers=headers) as response:
-        print(f"Get recent committers for {repository_full_name}: {response.status}")
-        if response.status in (403,):
-            print(await response.json())
-        if response.status in (204, 403, 404, 451):
-            return []
-        if response.status != 200:
-            print(response.status)
-            raise Exception(response.content)
+            commits = await response.json()
 
-        commits = await response.json()
-
-        contributors = []
-        for commit in commits:
-            login = (commit.get("author") or {}).get("login")
-            if login is None:
-                login = (commit.get("committer") or {}).get("login")
-            if login is not None:
-                contributors.append(login)
-        return list(set(contributors))
+            contributors = []
+            for commit in commits:
+                login = (commit.get("author") or {}).get("login")
+                if login is None:
+                    login = (commit.get("committer") or {}).get("login")
+                if login is not None:
+                    contributors.append(login)
+            return list(set(contributors))
 
 
 async def get_repositories_by_user(
@@ -107,34 +117,35 @@ async def get_repositories_by_user(
     }
 
     results = []
-    async with session.get(url, headers=headers) as response:
-        print(f"Getting repos for {user_name}: {response.status}")
-        if response.status in (403,):
-            print(await response.json())
-        if response.status in (204, 403, 404):
-            return []
+    while True:
+        async with session.get(url, headers=headers) as response:
+            print(f"Getting repos for {user_name}: {response.status}")
+            if response.status in (403,):
+                json_response = await response.json()
+                # print(await json_response)
+                if "rate limit" in json_response.get("message", ""):
+                    await RateLimiter.handle_rate_limit(response= response)
+                    continue
+            if response.status in (204, 403, 404):
+                return []
 
-        if response.status != 200:
-            print(response.status)
-            raise Exception(response.content)
-        results.extend(await response.json())
-        header = response.headers.get("Link", "")
-        next_link = NEXT_PATTERN.search(header)
+            if response.status != 200:
+                print(response.status)
+                raise Exception(response.content)
+            results.extend(await response.json())
+            header = response.headers.get("Link", "")
+            next_link = NEXT_PATTERN.search(header)
 
-        while next_link:
-            async with session.get(next_link.group(0), headers=headers) as response:
-                results.extend(await response.json())
-                header = response.headers.get("Link")
-                next_link = NEXT_PATTERN.search(header)
+            while next_link:
+                async with session.get(next_link.group(0), headers=headers) as response:
+                    results.extend(await response.json())
+                    header = response.headers.get("Link")
+                    next_link = NEXT_PATTERN.search(header)
 
-        repos = [repo["full_name"] for repo in results if not repo["fork"]]
-        print(f"Found repos: {repos}")
-        return repos
+            repos = [repo["full_name"] for repo in results if not repo["fork"]]
+            print(f"Found repos: {repos}")
+            return repos
 
-
-# start state: user
-# start_state  = ['tobiadefami']
-# goal_state = ["..,", 'linustorvalds']
 
 
 async def get_collaborators(

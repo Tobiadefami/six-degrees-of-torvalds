@@ -1,10 +1,8 @@
 import asyncio
-import json
-from typing import TypeAlias
-
 import aiohttp
+import traceback
+from typing import TypeAlias
 from sqlitedict import SqliteDict
-
 from get_user_contributions import get_collaborators
 
 User: TypeAlias = str
@@ -13,13 +11,19 @@ Pair: TypeAlias = tuple[User, list[Repo] | None]
 Path: TypeAlias = list[Pair]
 PathMap: TypeAlias = dict[User, Path]
 
+def initialize_frontier(paths: PathMap):
+    try:
+        if "__frontier__" not in paths:
+                print("Resetting frontier...")
+                paths["__frontier__"] = [[("torvalds", None)]]
+    except Exception as e:
+        print("Error initializing frontier", str(e))
+        traceback.print_exc()
 
-async def build_cache(session: aiohttp.ClientSession, depth: int = 3) -> PathMap:
+async def build_cache(session: aiohttp.ClientSession, depth: int = 6) -> PathMap:
     with SqliteDict("cache.sqlite", autocommit=True) as paths:
         # Try to resume from existing frontier, otherwise begin from the beginning
-        if "__frontier__" not in paths:
-            print("Resetting frontier...")
-            paths["__frontier__"] = [[("torvalds", None)]]
+        initialize_frontier(paths)        
 
         while paths["__frontier__"]:
             frontier = list(paths["__frontier__"])

@@ -10,8 +10,8 @@ Repo: TypeAlias = str
 Pair: TypeAlias = tuple[User, list[Repo] | None]
 Path: TypeAlias = list[Pair]
 
-start_state = [("tobiadefami", None)]
-goal_state = ["kennyrich"]
+start_state = [("boyanangelov", None)]
+goal_state = ["torvalds"]
 
 
 CACHE: dict[User, Path] = load_cache()
@@ -21,7 +21,7 @@ async def is_goal(state: Path, goal_user: User = goal_state[0]):
     current_user = state[-1][0]
     if current_user == goal_user:
         return True
-    if current_user in CACHE and goal_user in [pair[0] for pair in CACHE[current_user]]:
+    if current_user in CACHE:
         return True
     return False
 
@@ -43,8 +43,12 @@ def get_full_path(current_path):
     user = current_path[-1][0]
     if user not in CACHE:
         return current_path
-    return {"current_path": current_path, 
-            "connection": CACHE[user]}
+    
+    torvalds = CACHE[user].pop(0)
+    CACHE[user].append(torvalds)
+    import ipdb; ipdb.set_trace()
+    current_path.extend(CACHE[user])
+    return current_path
 
 async def find_connection(start_state: Path):
     frontier = [start_state]
