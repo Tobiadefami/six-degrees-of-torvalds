@@ -1,4 +1,3 @@
-# import requests
 import asyncio
 import os
 import re
@@ -6,7 +5,6 @@ from collections import defaultdict
 from pprint import pprint
 
 import aiohttp
-import time
 
 from rate_limiter import RateLimiter
 
@@ -36,10 +34,10 @@ async def get_contributors(
                 json_response = await response.json()
                 if "too large" in json_response.get("message"):
                     return await get_recent_committers(repository_full_name, session)
-                
+
                 if "rate limit" in json_response.get("message", ""):
                     await RateLimiter.handle_rate_limit(response)
-                    continue                
+                    continue
                 return []
 
             if response.status in (204, 403, 404, 451):
@@ -69,31 +67,78 @@ async def get_recent_committers(
         "Authorization": f"Bearer {GITHUB_API_KEY}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
+
+    max_retries = 5  # maximum number of retries
+    retry_count = 0
+    backoff_factor = 2  # exponential backoff factor
+
     while True:
-        async with session.get(url, headers=headers) as response:
-            print(f"Get recent committers for {repository_full_name}: {response.status}")
-            if response.status in (403,):
-                print(await response.json())
-                json_response = await response.json()
-                if "rate limit" in json_response.get("message", ""):
-                    await RateLimiter.handle_rate_limit(response=response)
-                    continue
-            if response.status in (204, 403, 404, 451):
+        try:
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+
+                    print(
+                        f"Get recent committers for {repository_full_name}: {response.status}"
+                    )
+                    commits = await response.json()
+
+                    contributors = set()
+                    for commit in commits:
+                        login = (commit.get("author") or {}).get("login")
+                        if login is None:
+                            login = (commit.get("committer") or {}).get("login")
+                        if login is not None:
+                            contributors.add(login)
+                        return list(contributors)
+
+                elif response.status == 403 or response.status == 429:
+                    print(await response.json())
+                    json_response = await response.json()
+                    if "rate limit" in json_response.get("message", ""):
+                        await RateLimiter.handle_rate_limit(response=response)
+                        continue
+                elif response.status in (204, 404, 451):
+                    return []
+                else:
+                    response.raise_for_status()
+                # if response.status != 200:
+                #     print(response.status)
+                #     raise Exception(response.content)
+        except aiohttp.ClientConnectionError as e:
+            print(
+                f"Error getting recent committers for {repository_full_name}: {str(e)}"
+            )
+            if retry_count < max_retries:
+                sleep_time = backoff_factor**retry_count
+                print(
+                    f"Retrying in {sleep_time} seconds due to connection error: {str(e)}"
+                )
+                await asyncio.sleep(sleep_time)
+                retry_count += 1
+                continue
+            else:
+                print(f"Max retries reached for {repository_full_name}")
                 return []
-            if response.status != 200:
-                print(response.status)
-                raise Exception(response.content)
-
-            commits = await response.json()
-
-            contributors = []
-            for commit in commits:
-                login = (commit.get("author") or {}).get("login")
-                if login is None:
-                    login = (commit.get("committer") or {}).get("login")
-                if login is not None:
-                    contributors.append(login)
-            return list(set(contributors))
+        except aiohttp.ClientResponseError as e:
+            print(
+                f"Error getting recent committers for {repository_full_name}: {str(e)}"
+            )
+            if retry_count < max_retries:
+                sleep_time = backoff_factor**retry_count
+                print(
+                    f"Retrying in {sleep_time} seconds due to response error: {str(e)}"
+                )
+                await asyncio.sleep(sleep_time)
+                retry_count += 1
+                continue
+            else:
+                print(f"Max retries reached for {repository_full_name}")
+                return []
+        except Exception as e:
+            print(
+                f"Error getting recent committers for {repository_full_name}: {str(e)}"
+            )
+            return []
 
 
 async def get_repositories_by_user(
@@ -122,9 +167,9 @@ async def get_repositories_by_user(
             print(f"Getting repos for {user_name}: {response.status}")
             if response.status in (403,):
                 json_response = await response.json()
-                # print(await json_response)
+                print(json_response)
                 if "rate limit" in json_response.get("message", ""):
-                    await RateLimiter.handle_rate_limit(response= response)
+                    await RateLimiter.handle_rate_limit(response=response)
                     continue
             if response.status in (204, 403, 404):
                 return []
@@ -137,15 +182,20 @@ async def get_repositories_by_user(
             next_link = NEXT_PATTERN.search(header)
 
             while next_link:
-                async with session.get(next_link.group(0), headers=headers) as response:
-                    results.extend(await response.json())
-                    header = response.headers.get("Link")
-                    next_link = NEXT_PATTERN.search(header)
+                try:
+                    async with session.get(
+                        next_link.group(0), headers=headers
+                    ) as response:
+                        results.extend(await response.json())
+                        header = response.headers.get("Link")
+                        next_link = NEXT_PATTERN.search(header)
+                except Exception as e:
+                    print("Error getting next page", str(e))
+                    continue
 
             repos = [repo["full_name"] for repo in results if not repo["fork"]]
             print(f"Found repos: {repos}")
             return repos
-
 
 
 async def get_collaborators(
