@@ -177,7 +177,17 @@ async def get_repositories_by_user(
             if response.status != 200:
                 print(response.status)
                 raise Exception(response.content)
-            results.extend(await response.json())
+            try:
+                json_data = await response.json()
+                if isinstance(json_data, list):
+                    results.extend(json_data)
+                else:
+                    print("Unexpected json data", json_data)   
+                    
+            except Exception as e:
+                print("Error parsing json", str(e))
+                continue
+            
             header = response.headers.get("Link", "")
             next_link = NEXT_PATTERN.search(header)
 
@@ -186,17 +196,24 @@ async def get_repositories_by_user(
                     async with session.get(
                         next_link.group(0), headers=headers
                     ) as response:
-                        results.extend(await response.json())
+                        json_data = await response.json()
+                        if isinstance(json_data, list):
+                            results.extend(json_data)
+                        else:
+                            print("Unexpected json data", json_data)
+                            
                         header = response.headers.get("Link")
                         next_link = NEXT_PATTERN.search(header)
                 except Exception as e:
                     print("Error getting next page", str(e))
                     continue
-
-            repos = [repo["full_name"] for repo in results if not repo["fork"]]
-            print(f"Found repos: {repos}")
-            return repos
-
+            try:
+                repos = [repo["full_name"] for repo in results if isinstance(repo, dict) and not repo.get("fork", True)]
+                print(f"Found repos: {repos}")
+                return repos
+            except Exception as e:
+                print("Error getting repos", str(e))
+                return []
 
 async def get_collaborators(
     user_name: str, session: aiohttp.client.ClientSession = None
@@ -218,4 +235,4 @@ async def main(user_name: str):
 
 
 if __name__ == "__main__":
-    asyncio.run(main("hwchase17"))
+    asyncio.run(main("torvalds"))
