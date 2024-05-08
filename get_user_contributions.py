@@ -17,7 +17,10 @@ EXCLUDE = {"gitter-badger", "dependabot[bot]", "renovate[bot]"}
 
 
 async def get_contributors(
-    repository_full_name: str, session: aiohttp.client.ClientSession = None
+    repository_full_name: str, 
+    session: aiohttp.client.ClientSession = None,
+    max_retries: int = 3,
+    delay: float = 1.0
 ) -> list[str]:
     url = f"https://api.github.com/repos/{repository_full_name}/contributors"
     await rate_limiter.wait()
@@ -27,32 +30,44 @@ async def get_contributors(
         "Authorization": f"Bearer {GITHUB_API_KEY}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    while True:
-        async with session.get(url, headers=headers) as response:
-            print(f"Get contributors for {repository_full_name}: {response.status}")
-            if response.status in (403,):
-                json_response = await response.json()
-                if "too large" in json_response.get("message"):
-                    return await get_recent_committers(repository_full_name, session)
 
-                if "rate limit" in json_response.get("message", ""):
-                    await RateLimiter.handle_rate_limit(response)
-                    continue
-                return []
+    attempt = 0
+    while attempt < max_retries:
+        try:
+            async with session.get(url, headers=headers) as response:
+                print(f"Get contributors for {repository_full_name}: {response.status}")
+                if response.status == 200:
+                    contributors = await response.json()
+                    return [
+                        contrib["login"] for contrib in contributors
+                        if contrib["login"] not in EXCLUDE
+                    ]
 
-            if response.status in (204, 403, 404, 451):
-                return []
-            if response.status != 200:
-                print(response.status)
-                raise Exception(response.content)
+                if response.status in (403,):
+                    json_response = await response.json()
+                    if "too large" in json_response.get("message"):
+                        return await get_recent_committers(repository_full_name, session)
+                    if "rate limit" in json_response.get("message", ""):
+                        await RateLimiter.handle_rate_limit(response)
+                        continue
+                    return []
 
-            contributors = await response.json()
+                if response.status in (204, 403, 404, 451):
+                    return []
+                
+                response.raise_for_status()  # will raise an HTTPException for non-200 status codes
+        except aiohttp.ClientConnectionError as e:
+            print(f"Connection closed, attempt {attempt + 1} of {max_retries}: {str(e)}")
+            attempt += 1
+            await asyncio.sleep(delay * (2 ** attempt))  # Exponential backoff
+        except Exception as e:
+            print(f"An error occurred on attempt {attempt + 1}: {str(e)}")
+            attempt += 1
+            if attempt >= max_retries:
+                raise  # Re-raise the last exception if all retries fail
 
-            return [
-                contrib["login"]
-                for contrib in contributors
-                if contrib["login"] not in EXCLUDE
-            ]
+    raise Exception("Max retries exceeded")
+
 
 
 async def get_recent_committers(
