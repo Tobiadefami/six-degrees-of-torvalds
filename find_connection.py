@@ -10,7 +10,7 @@ Repo: TypeAlias = str
 Pair: TypeAlias = tuple[User, list[Repo] | None]
 Path: TypeAlias = list[Pair]
 
-start_state = [("boyanangelov", None)]
+start_state = [("madisonmay", None)]
 goal_state = ["torvalds"]
 
 
@@ -26,7 +26,7 @@ async def is_goal(state: Path, goal_user: User = goal_state[0]):
     return False
 
 
-async def get_next_paths(current_path: Path):
+async def get_next_paths(current_path: Path, session: aiohttp.ClientSession):
     last_user = current_path[-1][0]
 
     async with aiohttp.ClientSession() as session:
@@ -41,35 +41,41 @@ async def get_next_paths(current_path: Path):
 
 def get_full_path(current_path):
     user = current_path[-1][0]
+    data = current_path + CACHE[user][::-1]
+
     if user not in CACHE:
         return current_path
-    
-    torvalds = CACHE[user].pop(0)
-    CACHE[user].append(torvalds)
-    import ipdb; ipdb.set_trace()
-    current_path.extend(CACHE[user])
-    return current_path
+    import ipdb
+
+    ipdb.set_trace()
+    for item in range(len(data) - 2):
+        if data[item][0] == data[item + 1][0]:
+            data[item + 1] = (data[item + 2][0], data[item + 1][1])
+    return [(repo, user) for (user, repo) in data[:-1]]
+
 
 async def find_connection(start_state: Path):
     frontier = [start_state]
     visited: set[str] = set()
     print("frontier", frontier)
-    while frontier:
-        current_path = frontier.pop(0)
-        current_user = current_path[-1][0]
 
-        if await is_goal(current_path):
-            return get_full_path(current_path)
-        
-        if current_user in visited:
-            continue
+    async with aiohttp.ClientSession() as session:
+        while frontier:
+            current_path = frontier.pop(0)
+            current_user = current_path[-1][0]
 
-        visited.add(current_user)
+            if await is_goal(current_path):
+                return get_full_path(current_path)
 
-        next_paths = await get_next_paths(current_path)
-        frontier.extend(next_paths)
+            if current_user in visited:
+                continue
 
-    return "Path not found"
+            visited.add(current_user)
+
+            next_paths = await get_next_paths(current_path, session=session)
+            frontier.extend(next_paths)
+
+        return "Path not found"
 
 
 async def main(start_state: Path = start_state):
