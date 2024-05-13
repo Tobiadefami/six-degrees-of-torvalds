@@ -17,10 +17,10 @@ EXCLUDE = {"gitter-badger", "dependabot[bot]", "renovate[bot]"}
 
 
 async def get_contributors(
-    repository_full_name: str, 
+    repository_full_name: str,
     session: aiohttp.client.ClientSession = None,
     max_retries: int = 3,
-    delay: float = 1.0
+    delay: float = 1.0,
 ) -> list[str]:
     url = f"https://api.github.com/repos/{repository_full_name}/contributors"
     await rate_limiter.wait()
@@ -39,14 +39,17 @@ async def get_contributors(
                 if response.status == 200:
                     contributors = await response.json()
                     return [
-                        contrib["login"] for contrib in contributors
+                        contrib["login"]
+                        for contrib in contributors
                         if contrib["login"] not in EXCLUDE
                     ]
 
                 if response.status in (403,):
                     json_response = await response.json()
                     if "too large" in json_response.get("message"):
-                        return await get_recent_committers(repository_full_name, session)
+                        return await get_recent_committers(
+                            repository_full_name, session
+                        )
                     if "rate limit" in json_response.get("message", ""):
                         await RateLimiter.handle_rate_limit(response)
                         continue
@@ -54,12 +57,14 @@ async def get_contributors(
 
                 if response.status in (204, 403, 404, 451):
                     return []
-                
+
                 response.raise_for_status()  # will raise an HTTPException for non-200 status codes
         except aiohttp.ClientConnectionError as e:
-            print(f"Connection closed, attempt {attempt + 1} of {max_retries}: {str(e)}")
+            print(
+                f"Connection closed, attempt {attempt + 1} of {max_retries}: {str(e)}"
+            )
             attempt += 1
-            await asyncio.sleep(delay * (2 ** attempt))  # Exponential backoff
+            await asyncio.sleep(delay * (2**attempt))  # Exponential backoff
         except Exception as e:
             print(f"An error occurred on attempt {attempt + 1}: {str(e)}")
             attempt += 1
@@ -67,7 +72,6 @@ async def get_contributors(
                 raise  # Re-raise the last exception if all retries fail
 
     raise Exception("Max retries exceeded")
-
 
 
 async def get_recent_committers(
@@ -161,6 +165,8 @@ async def get_repositories_by_user(
     results_per_page: int = 100,
     type: str = "all",
     session: aiohttp.client.ClientSession = None,
+    max_retries: int = 3,
+    delay: float = 1.0,
 ) -> list[str]:
     """curl -L \
     -H "Accept: application/vnd.github+json" \
@@ -175,60 +181,71 @@ async def get_repositories_by_user(
         "Authorization": f"Bearer {GITHUB_API_KEY}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-
+    attempt = 0
     results = []
-    while True:
+    while attempt < max_retries:
         async with session.get(url, headers=headers) as response:
-            print(f"Getting repos for {user_name}: {response.status}")
-            if response.status in (403,):
-                json_response = await response.json()
-                print(json_response)
-                if "rate limit" in json_response.get("message", ""):
-                    await RateLimiter.handle_rate_limit(response=response)
-                    continue
-            if response.status in (204, 403, 404):
-                return []
-
-            if response.status != 200:
-                print(response.status)
-                raise Exception(response.content)
             try:
-                json_data = await response.json()
-                if isinstance(json_data, list):
-                    results.extend(json_data)
-                else:
-                    print("Unexpected json data", json_data)   
-                    
-            except Exception as e:
-                print("Error parsing json", str(e))
-                continue
-            
-            header = response.headers.get("Link", "")
-            next_link = NEXT_PATTERN.search(header)
+                print(f"Getting repos for {user_name}: {response.status}")
+                if response.status in (403,):
+                    json_response = await response.json()
+                    print(json_response)
+                    if "rate limit" in json_response.get("message", ""):
+                        await RateLimiter.handle_rate_limit(response=response)
+                        continue
+                if response.status in (204, 403, 404):
+                    return []
 
-            while next_link:
+                if response.status != 200:
+                    print(response.status)
+                    raise Exception(response.content)
                 try:
-                    async with session.get(
-                        next_link.group(0), headers=headers
-                    ) as response:
-                        json_data = await response.json()
-                        if isinstance(json_data, list):
-                            results.extend(json_data)
-                        else:
-                            print("Unexpected json data", json_data)
-                            
-                        header = response.headers.get("Link")
-                        next_link = NEXT_PATTERN.search(header)
+                    json_data = await response.json()
+                    if isinstance(json_data, list):
+                        results.extend(json_data)
+                    else:
+                        print("Unexpected json data", json_data)
+
                 except Exception as e:
-                    print("Error getting next page", str(e))
+                    print("Error parsing json", str(e))
                     continue
-            try:
-                repos = [repo["full_name"] for repo in results if isinstance(repo, dict) and not repo.get("fork", True)]
+
+                header = response.headers.get("Link", "")
+                next_link = NEXT_PATTERN.search(header)
+
+                while next_link:
+                    try:
+                        async with session.get(
+                            next_link.group(0), headers=headers
+                        ) as response:
+                            json_data = await response.json()
+                            if isinstance(json_data, list):
+                                results.extend(json_data)
+                            else:
+                                print("Unexpected json data", json_data)
+
+                            header = response.headers.get("Link")
+                            next_link = NEXT_PATTERN.search(header)
+                    except Exception as e:
+                        print("Error getting next page", str(e))
+                        continue
+                repos = [
+                    repo["full_name"]
+                    for repo in results
+                    if isinstance(repo, dict) and not repo.get("fork", True)
+                ]
                 print(f"Found repos: {repos}")
                 return repos
+
             except Exception as e:
-                print("Error getting repos", str(e))
-                return []
+                print(f"Error getting repos for {user_name}: {str(e)}")
+                attempt += 1
+                await asyncio.sleep(delay * (5**attempt))
+                if attempt >= max_retries:
+                    raise
+
+    raise Exception("Max retries exceeded")
+
 
 async def get_collaborators(
     user_name: str, session: aiohttp.client.ClientSession = None

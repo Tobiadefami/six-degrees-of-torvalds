@@ -1,0 +1,169 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+
+#username {
+  /* Field */
+
+  box-sizing: border-box;
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0px;
+  gap: 10px;
+
+  width: 327px;
+  height: 62px;
+
+  background: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  /* Button Shadow */
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+
+  /* Inside auto layout */
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+}
+
+#submit {
+  /* Button-New */
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 32px;
+  gap: 8px;
+
+  width: 124px;
+  height: 62px;
+
+  background: #F9C22E;
+  /* Button Shadow */
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+
+  /* Inside auto layout */
+  flex: none;
+  order: 1;
+  flex-grow: 1;
+
+}
+
+#title {
+  /* Title */
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 16px;
+
+  position: absolute;
+  width: 467px;
+  height: 62px;
+  left: calc(50% - 467px/2 - 0.5px);
+  top: 32px;
+
+  font-family: 'Poppins', sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 54px;
+  /* identical to box height */
+
+  color: #000000;
+
+}
+
+#result {
+
+  /* Result */
+
+  box-sizing: border-box;
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0px;
+  gap: 18px;
+
+  position: absolute;
+  width: 467px;
+  max-height: 100%;
+  left: calc(50% - 500px/2 - 0.5px);
+  top: 229px;
+
+}
+
+
+.user {
+  /* User */
+
+  width: 467px;
+  height: 71px;
+
+
+  /* Inside auto layout */
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  border: 1px solid #111111;
+  border-radius: 10px;
+  text-align: center;
+  line-height: 71px;
+}
+
+.connections {
+
+  margin-top:20px;  
+}
+
+.row {
+
+  /* 03 Input Field with Button */
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 16px;
+
+  position: absolute;
+  width: 467px;
+  height: 62px;
+  left: calc(50% - 467px/2 - 0.5px);
+  top: 124px;
+}
+
+#search {
+
+  position: relative;
+}
+
+
+/* * {
+  box-sizing: border-box;
+  border: 1px solid #111111;
+} */
