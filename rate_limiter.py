@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 
 class RateLimiter:
@@ -18,3 +19,11 @@ class RateLimiter:
                 await asyncio.sleep(sleep_time)
         # Put the current request timestamp in the queue
         await self.requests.put(asyncio.get_event_loop().time())
+        
+    @staticmethod
+    async def handle_rate_limit(response):
+        rate_limit_reset = int(response.headers.get('X-RateLimit-Reset', time.time()))  # Unix epoch time
+        sleep_duration = rate_limit_reset - int(time.time()) + 5  # Sleep a bit longer than the reset time
+        print(f"Rate limit hit. Sleeping for {sleep_duration} seconds.")
+        await asyncio.sleep(sleep_duration)
+        return True  # Indicates a rate limit was handled
