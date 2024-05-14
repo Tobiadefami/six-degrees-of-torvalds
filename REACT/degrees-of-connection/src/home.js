@@ -1,28 +1,32 @@
 import React, { useState } from "react";
 
-import api from "./api"; // Adjust the path to where your axios instance is located
+import api from "./api";
+import filterResults from "./utils";
 
 function Home() {
   const [username, setUsername] = useState("");
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // This function is triggered when the user clicks the "Submit" button
   const handleSubmit = () => {
     // Reset error state for a fresh attempt
     setError("");
+    setLoading(true);
 
     // Make an API request to the FastAPI backend
     api
-      .post(`/search/${username}`)
+      .post(`search/${username}`)
       .then((response) => {
         // Handle successful response, setting the data in `results`
-        setResults(response.data);
+        setResults(filterResults(response.data));
+        setLoading(false);
       })
       .catch((err) => {
         // Log the error for debugging purposes
         console.error("Error fetching data:", err);
-
+        setLoading(false);
         // Provide user-friendly feedback
         if (err.response) {
           // Server responded with a status outside the 2xx range
@@ -40,10 +44,38 @@ function Home() {
         }
       });
   };
+  // Filter results to include only the last repository link for each user
 
   return (
-    <div id="search">
-      <h1 id="title">Six degrees of Torvalds</h1>
+    <div>
+      <nav className="navbar navbar-expand-lg">
+        <div className="search">
+          <a className="navbar-brand" href="/">
+            Six Degrees of Torvalds
+          </a>
+        </div>
+        <div id="github-icon">
+          <a
+            href="https://github.com/tobiadefami/seven-degrees-of-torvalds"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <svg
+              width="43"
+              height="44"
+              viewBox="0 0 43 44"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M21.5 1.375C10.1162 1.375 0.895813 10.8098 0.895813 22.4583C0.895813 31.7877 6.79376 39.6676 14.9839 42.4611C16.0141 42.6456 16.4004 42.0131 16.4004 41.4597C16.4004 40.959 16.3747 39.2986 16.3747 37.5329C11.1979 38.508 9.85863 36.2416 9.44654 35.0556C9.21475 34.4495 8.21029 32.5783 7.33462 32.0776C6.61347 31.6823 5.58326 30.7072 7.30886 30.6808C8.93144 30.6545 10.0904 32.2094 10.4768 32.8419C12.3311 36.0307 15.293 35.1347 16.4777 34.5812C16.658 33.2108 17.1989 32.2884 17.7912 31.7614C13.2068 31.2343 8.41633 29.4158 8.41633 21.3515C8.41633 19.0586 9.21475 17.1611 10.5283 15.6853C10.3222 15.1582 9.60107 12.9972 10.7343 10.0982C10.7343 10.0982 12.4599 9.54479 16.4004 12.2593C18.0488 11.7849 19.8001 11.5477 21.5515 11.5477C23.3028 11.5477 25.0542 11.7849 26.7025 12.2593C30.6431 9.51844 32.3687 10.0982 32.3687 10.0982C33.5019 12.9972 32.7808 15.1582 32.5747 15.6853C33.8882 17.1611 34.6866 19.0323 34.6866 21.3515C34.6866 29.4422 29.8704 31.2343 25.286 31.7614C26.0329 32.4202 26.6768 33.6852 26.6768 35.6618C26.6768 38.4817 26.651 40.7481 26.651 41.4597C26.651 42.0131 27.0374 42.672 28.0676 42.4611C36.2062 39.6676 42.1041 31.7614 42.1041 22.4583C42.1041 10.8098 32.8838 1.375 21.5 1.375V1.375Z"
+                fill="#111111"
+              />
+            </svg>
+          </a>
+        </div>
+      </nav>
+
       <div className="row">
         <input
           id="username"
@@ -57,7 +89,9 @@ function Home() {
           Submit
         </button>
       </div>
+
       {error && <p>{error}</p>}
+      {loading && <div className="spinner"></div>}
       <div id="result">
         {results.map((item, index) => (
           <div key={index}>
@@ -67,7 +101,7 @@ function Home() {
               <div className="connections">
                 <svg
                   width="30"
-                  height="87"
+                  height="50"
                   viewBox="0 0 30 87"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -77,7 +111,13 @@ function Home() {
                     fill="#F9C22E"
                   />
                 </svg>
-                {item[0]}
+                <a
+                  href={`https://github.com/${item[0]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {item[0]}
+                </a>
               </div>
             ) : null}
           </div>
