@@ -14,6 +14,7 @@ function Home() {
     // Reset error state for a fresh attempt
     setError("");
     setLoading(true);
+    setResults([]);
 
     // Make an API request to the FastAPI backend
     api
@@ -91,11 +92,20 @@ function Home() {
       </div>
 
       {error && <p>{error}</p>}
-      {loading && <div className="spinner"></div>}
+
       <div id="result">
+        {loading && <div className="spinner"></div>}
         {results.map((item, index) => (
           <div key={index}>
-            <div className="user">{item[1]}</div>
+            <div className="user">
+              <a
+                href={`https://github.com/${item[1]}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {item[1]}
+              </a>
+            </div>
 
             {item[0] ? (
               <div className="connections">
