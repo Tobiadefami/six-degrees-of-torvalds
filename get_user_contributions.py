@@ -165,7 +165,7 @@ async def get_repositories_by_user(
     results_per_page: int = 100,
     type: str = "all",
     session: aiohttp.client.ClientSession = None,
-    max_retries: int = 3,
+    max_retries: int = 5,
     delay: float = 1.0,
 ) -> list[str]:
     """curl -L \
