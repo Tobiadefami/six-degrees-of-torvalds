@@ -8,20 +8,28 @@ function Home() {
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [noConnection, setNoConnection] = useState(false);
 
   // This function is triggered when the user clicks the "Submit" button
   const handleSubmit = () => {
     // Reset error state for a fresh attempt
     setError("");
-    setLoading(true);
-    setResults([]);
+    setLoading(true); // Set loading state to true when the request is in progress
+    setResults([]); // Reset results state for a fresh attempt
+    setNoConnection(false); // Reset noConnection state for a fresh attempt
 
     // Make an API request to the FastAPI backend
     api
       .post(`search/${username}`)
       .then((response) => {
         // Handle successful response, setting the data in `results`
-        setResults(filterResults(response.data));
+        const filtered = filterResults(response.data);
+
+        if (filtered.length === 0) {
+          setNoConnection(true);
+        } else {
+          setResults(filtered);
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -52,7 +60,7 @@ function Home() {
       <nav className="navbar navbar-expand-lg">
         <div className="search">
           <a className="navbar-brand" href="/">
-            Six Degrees of Torvalds
+            Seven Degrees of Torvalds
           </a>
         </div>
         <div id="github-icon">
@@ -94,6 +102,7 @@ function Home() {
       {error && <p>{error}</p>}
 
       <div id="result">
+        {noConnection && <p>No connection found</p>}
         {loading && <div className="spinner"></div>}
         {results.map((item, index) => (
           <div key={index}>

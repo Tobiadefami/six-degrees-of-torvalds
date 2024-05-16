@@ -45,9 +45,7 @@ def get_full_path(current_path):
 
     if user not in CACHE:
         return current_path
-    import ipdb
 
-    ipdb.set_trace()
     for item in range(len(data) - 2):
         if data[item][0] == data[item + 1][0]:
             data[item + 1] = (data[item + 2][0], data[item + 1][1])
@@ -75,7 +73,7 @@ async def find_connection(start_state: Path):
             next_paths = await get_next_paths(current_path, session=session)
             frontier.extend(next_paths)
 
-        return "Path not found"
+        return []
 
 
 async def main(start_state: Path = start_state):
