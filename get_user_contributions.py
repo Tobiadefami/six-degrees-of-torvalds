@@ -3,7 +3,7 @@ import os
 import re
 from collections import defaultdict
 from pprint import pprint
-
+from contributions_from_events import get_user_events, extract_repos_from_events
 import aiohttp
 
 from rate_limiter import RateLimiter
@@ -183,6 +183,10 @@ async def get_repositories_by_user(
     }
     attempt = 0
     results = []
+
+    events = await get_user_events(user_name, session=session)
+    repos_from_events = await extract_repos_from_events(events)
+
     while attempt < max_retries:
         async with session.get(url, headers=headers) as response:
             try:
@@ -235,6 +239,9 @@ async def get_repositories_by_user(
                     if isinstance(repo, dict) and not repo.get("fork", True)
                 ]
                 print(f"Found repos: {repos}")
+                for repository in repos_from_events:
+                    if repository not in repos:
+                        repos.append(repository)
                 return repos
 
             except Exception as e:
