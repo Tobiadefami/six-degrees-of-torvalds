@@ -10,8 +10,8 @@ Repo: TypeAlias = str
 Pair: TypeAlias = tuple[User, list[Repo] | None]
 Path: TypeAlias = list[Pair]
 
-start_state = [("madisonmay", None)]
-goal_state = ["torvalds"]
+start_state = [("benleetownsend", None)]
+goal_state = ["madisonmay"]
 
 
 CACHE: dict[User, Path] = load_cache()
@@ -19,27 +19,21 @@ CACHE: dict[User, Path] = load_cache()
 
 async def is_goal(state: Path, goal_user: User = goal_state[0]):
     current_user = state[-1][0]
-    if current_user == goal_user:
-        return True
-    if current_user in CACHE:
-        return True
-    return False
+    return current_user == goal_user or current_user in CACHE
 
 
 async def get_next_paths(current_path: Path, session: aiohttp.ClientSession):
     last_user = current_path[-1][0]
 
-    async with aiohttp.ClientSession() as session:
-        collaborators = await get_collaborators(last_user, session=session)
-        next_paths = [
-            current_path + [(collaborator, repos)]
-            for collaborator, repos in collaborators.items()
-        ]
-
+    collaborators = await get_collaborators(last_user, session=session)
+    next_paths = [
+        current_path + [(collaborator, sorted(repos))]
+        for collaborator, repos in collaborators.items()
+    ]
     return next_paths
 
 
-def get_full_path(current_path):
+async def get_full_path(current_path):
     user = current_path[-1][0]
     data = current_path + CACHE[user][::-1]
 
@@ -63,7 +57,7 @@ async def find_connection(start_state: Path):
             current_user = current_path[-1][0]
 
             if await is_goal(current_path):
-                return get_full_path(current_path)
+                return await get_full_path(current_path)
 
             if current_user in visited:
                 continue
