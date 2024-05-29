@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import api from "./api";
 import arrow from "./arrow.svg";
@@ -11,6 +11,19 @@ function Home() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [noConnection, setNoConnection] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await api.get("user");
+        setUser(response.data);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      }
+    };
+    fetchUser();
+  }, []);
 
   // This function is triggered when the user clicks the "Submit" button
   const handleSubmit = () => {
@@ -77,6 +90,12 @@ function Home() {
       </nav>
 
       <div className="row">
+        {user ? (
+          <div>
+            <h1>Welcome {user.login}!</h1>
+          </div>
+        ) : null}
+
         <input
           id="username"
           type="text"
