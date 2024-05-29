@@ -9,7 +9,12 @@ packages = [{include = "seven_degrees_of_torvalds"}]
 [tool.poetry.dependencies]
 python = "^3.10"
 requests = "^2.31.0"
-ipdb = "^0.13.13"
+starlette = "^0.37.2"
+fastapi = "^0.111.0"
+aiohttp = "^3.9.5"
+sqlitedict = "^2.1.0"
+itsdangerous = "^2.2.0"
+fastapi-sessions = "^0.3.2"
 
 
 [build-system]
