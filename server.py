@@ -1,15 +1,16 @@
-from find_connection import find_connection
-from fastapi.middleware.cors import CORSMiddleware
-from custom_rate_limiter import is_rate_limited
+import logging
+import os
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
 from httpx import AsyncClient
-import os
-from dotenv import load_dotenv
 from starlette.middleware.sessions import SessionMiddleware
-import logging
+
+from custom_rate_limiter import is_rate_limited
+from find_connection import find_connection
 
 load_dotenv()
 
@@ -26,7 +27,7 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
     tokenUrl="https://github.com/login/oauth/access_token",
 )
 
-origins = ["http://localhost:3000"]
+origins = ["http://127.0.0.1:3000"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -100,7 +101,7 @@ async def callback(request: Request, code: str):
         logging.debug("Session user set:", request.session["user"])
         print("user set in session", request.session["user"])
         # Redirect to the home page
-        return RedirectResponse(url="http://localhost:3000")
+        return RedirectResponse(url="http://127.0.0.1:3000")
 
 
 @app.get("/logout")
