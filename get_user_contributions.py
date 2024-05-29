@@ -15,6 +15,12 @@ rate_limiter = RateLimiter(max_requests=900, period=60)
 
 EXCLUDE = {"gitter-badger", "dependabot[bot]", "renovate[bot]"}
 
+headers = {
+    "Accept": "application/vnd.github+json",
+    "Authorization": f"Bearer {GITHUB_API_KEY}",
+    "X-GitHub-Api-Version": "2022-11-28",
+}
+
 
 async def get_contributors(
     repository_full_name: str,
@@ -24,12 +30,6 @@ async def get_contributors(
 ) -> list[str]:
     url = f"https://api.github.com/repos/{repository_full_name}/contributors"
     await rate_limiter.wait()
-
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {GITHUB_API_KEY}",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
 
     attempt = 0
     while attempt < max_retries:
@@ -80,12 +80,6 @@ async def get_recent_committers(
     # TODO: check larger number of commits
     url = f"https://api.github.com/repos/{repository_full_name}/commits?per_page=100"
     await rate_limiter.wait()
-
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {GITHUB_API_KEY}",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
 
     max_retries = 5  # maximum number of retries
     retry_count = 0
@@ -168,19 +162,10 @@ async def get_repositories_by_user(
     max_retries: int = 5,
     delay: float = 1.0,
 ) -> list[str]:
-    """curl -L \
-    -H "Accept: application/vnd.github+json" \
-    -H "Authorization: Bearer <YOUR-TOKEN>" \
-    -H "X-GitHub-Api-Version: 2022-11-28" \
-    """
+
     await rate_limiter.wait()
     url = f"https://api.github.com/users/{user_name}/repos?type={type}?&per_page={results_per_page}"
 
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "Authorization": f"Bearer {GITHUB_API_KEY}",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
     attempt = 0
     results = []
 
@@ -262,7 +247,8 @@ async def get_collaborators(
     for repository_full_name in repository_full_names:
         contributors = await get_contributors(repository_full_name, session=session)
         for contributor in contributors:
-            result[contributor].add(repository_full_name)
+            if contributor.lower() != user_name.lower():
+                result[contributor].add(repository_full_name)
 
     return result
 
@@ -274,4 +260,4 @@ async def main(user_name: str):
 
 
 if __name__ == "__main__":
-    asyncio.run(main("torvalds"))
+    asyncio.run(main("joshuafolorunsho"))

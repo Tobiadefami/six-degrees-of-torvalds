@@ -1,15 +1,18 @@
-import requests
 import os
 from rate_limiter import RateLimiter
 import aiohttp
 import asyncio
 
 GITHUB_TOKEN = os.getenv("GITHUB_API_KEY")
-USERNAME = "ideanl"
+USERNAME = "madisonmay"
 headers = {
     "Authorization": f"token {GITHUB_TOKEN}",
     "Accept": "application/vnd.github.v3+json",
 }
+
+rate_limiter = RateLimiter(max_requests=900, period=60)
+
+events_to_include = ["PushEvent", "CreateEvent", "MemberEvent"]
 
 
 async def get_user_events(
@@ -18,6 +21,7 @@ async def get_user_events(
     events = []
     page = 1
     url = f"https://api.github.com/users/{username}/events?per_page={per_page}&page={page}"
+    await rate_limiter.wait()
 
     while True:
         async with session.get(url, headers=headers) as response:
@@ -54,11 +58,11 @@ async def get_user_events(
 
 async def extract_repos_from_events(events):
     repos = set()
-    print(events)
     if events is None:
         return repos
     for event in events:
-        repos.add(event["repo"]["name"])
+        if event["type"] in events_to_include:
+            repos.add(event["repo"]["name"])
     return repos
 
 
