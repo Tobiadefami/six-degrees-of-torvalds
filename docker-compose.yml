@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+    - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+    - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+    - SECRET_KEY=${SECRET_KEY}
+    - BACKEND_HOST=${BACKEND_HOST}
+    - FRONTEND_HOST=${FRONTEND_HOST}
+    command: poetry run fastapi run sixdegrees/server.py
+  frontend:
+    build: ./REACT/six_degrees_of_connection
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./REACT/six_degrees_of_connection:/app
+    environment:
+      - BACKEND_HOST=${BACKEND_HOST}
+      - FRONTEND_HOST=${FRONTEND_HOST}
+
+    command: npm start

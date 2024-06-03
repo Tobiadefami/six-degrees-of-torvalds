@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "seven-degrees-of-torvalds"
+name = "sixdegrees"
 version = "0.1.0"
 description = ""
 authors = ["tobiadefami <tobiadefami@gmail.com>"]
