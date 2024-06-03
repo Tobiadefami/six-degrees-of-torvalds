@@ -9,8 +9,8 @@ from fastapi.security import OAuth2AuthorizationCodeBearer
 from httpx import AsyncClient
 from starlette.middleware.sessions import SessionMiddleware
 
-from custom_rate_limiter import is_rate_limited
-from find_connection import find_connection
+from sixdegrees.custom_rate_limiter import is_rate_limited
+from sixdegrees.find_connection import find_connection
 
 load_dotenv()
 
@@ -19,15 +19,17 @@ app = FastAPI()
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 SECRET_KEY = os.getenv("SECRET_KEY")
-REDIRECT_URI = "http://127.0.0.1:8000/callback"
-
+BACKEND_HOST = os.getenv("BACKEND_HOST")
+FRONTEND_HOST = os.getenv("FRONTEND_HOST")
+REDIRECT_URI = f"http://{BACKEND_HOST}/callback"
+print(REDIRECT_URI)
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl="https://github.com/login/oauth/authorize",
     tokenUrl="https://github.com/login/oauth/access_token",
 )
 
-origins = ["http://127.0.0.1:3000"]
+origins = [f"http://{FRONTEND_HOST}"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -101,7 +103,7 @@ async def callback(request: Request, code: str):
         logging.debug("Session user set:", request.session["user"])
         print("user set in session", request.session["user"])
         # Redirect to the home page
-        return RedirectResponse(url="http://127.0.0.1:3000")
+        return RedirectResponse(url=f"http://{FRONTEND_HOST}")
 
 
 @app.get("/logout")
@@ -121,8 +123,3 @@ def get_user(request: Request):
 
 
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY)
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -3,7 +3,7 @@ import aiohttp
 import traceback
 from typing import TypeAlias
 from sqlitedict import SqliteDict
-from get_user_contributions import get_collaborators
+from sixdegrees.get_user_contributions import get_collaborators
 import sqlitedict
 
 User: TypeAlias = str

@@ -1,8 +1,8 @@
 import asyncio
 import aiohttp
-from get_user_contributions import get_collaborators
+from sixdegrees.get_user_contributions import get_collaborators
 from typing import TypeAlias
-from load_cache import load_cache
+from sixdegrees.load_cache import load_cache
 
 
 User: TypeAlias = str
@@ -10,8 +10,8 @@ Repo: TypeAlias = str
 Pair: TypeAlias = tuple[User, list[Repo] | None]
 Path: TypeAlias = list[Pair]
 
-start_state = [("benleetownsend", None)]
-goal_state = ["madisonmay"]
+start_state = [("tobiadefami", None)]
+goal_state = ["torvalds"]
 
 
 CACHE: dict[User, Path] = load_cache()

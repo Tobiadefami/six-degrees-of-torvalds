@@ -3,10 +3,13 @@ import os
 import re
 from collections import defaultdict
 from pprint import pprint
-from contributions_from_events import get_user_events, extract_repos_from_events
+from sixdegrees.contributions_from_events import (
+    get_user_events,
+    extract_repos_from_events,
+)
 import aiohttp
 
-from rate_limiter import RateLimiter
+from sixdegrees.rate_limiter import RateLimiter
 
 GITHUB_API_KEY = os.getenv("GITHUB_API_KEY")
 NEXT_PATTERN = re.compile(r'(?<=<)([\S]*)(?=>; rel="next")', re.IGNORECASE)

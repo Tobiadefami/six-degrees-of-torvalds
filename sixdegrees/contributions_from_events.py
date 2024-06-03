@@ -1,5 +1,5 @@
 import os
-from rate_limiter import RateLimiter
+from sixdegrees.rate_limiter import RateLimiter
 import aiohttp
 import asyncio
 
