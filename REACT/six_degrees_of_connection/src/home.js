@@ -75,7 +75,7 @@ function Home() {
       <nav className="navbar navbar-expand-lg">
         <div className="search">
           <a className="navbar-brand" href="/">
-            Seven Degrees of Torvalds
+            Six Degrees of Torvalds
           </a>
         </div>
         <div id="github-icon">
@@ -89,13 +89,13 @@ function Home() {
         </div>
       </nav>
 
-      <div className="login">
+      {/* <div className="login">
         {user ? (
           <div className="login">
             <h1>Welcome {user.login}!</h1>
           </div>
         ) : null}
-      </div>
+      </div> */}
 
       <div className="row">
         <input
