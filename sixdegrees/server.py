@@ -1,7 +1,7 @@
 import logging
 import os
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -12,7 +12,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from sixdegrees.custom_rate_limiter import is_rate_limited
 from sixdegrees.find_connection import find_connection
 
-load_dotenv()
+# load_dotenv()
 
 app = FastAPI()
 
@@ -22,12 +22,12 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 BACKEND_HOST = os.getenv("BACKEND_HOST")
 FRONTEND_HOST = os.getenv("FRONTEND_HOST")
 REDIRECT_URI = f"http://{BACKEND_HOST}/callback"
-print(REDIRECT_URI)
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl="https://github.com/login/oauth/authorize",
     tokenUrl="https://github.com/login/oauth/access_token",
 )
+
 
 origins = [f"http://{FRONTEND_HOST}"]
 app.add_middleware(
@@ -42,6 +42,7 @@ app.add_middleware(
 @app.post("/search/{username}")
 async def search_user(username: str, request: Request):
     logging.debug("Request session data: %s", request.session)
+    print("access token", request.session.get("access_token"))
     user = request.session.get("user")
     if not user:
         raise HTTPException(status_code=401, detail="User not authenticated")
@@ -52,7 +53,9 @@ async def search_user(username: str, request: Request):
             status_code=429, detail="Rate limit exceeded. Try again later."
         )
 
-    connection = await find_connection([(username, None)])
+    connection = await find_connection(
+        [(username, None)], access_token=request.session["access_token"]
+    )
     return connection
 
 
@@ -60,7 +63,7 @@ async def search_user(username: str, request: Request):
 def login():
     github_authorize_url = (
         f"https://github.com/login/oauth/authorize"
-        f"?client_id={GITHUB_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=read:user"
+        f"?client_id={GITHUB_CLIENT_ID}&redirect_uri={REDIRECT_URI}&scope=read:user,repo"
     )
     return RedirectResponse(github_authorize_url)
 
@@ -109,7 +112,7 @@ async def callback(request: Request, code: str):
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url="/")
+    return RedirectResponse(url=f"http://{FRONTEND_HOST}")
 
 
 @app.get("/user")

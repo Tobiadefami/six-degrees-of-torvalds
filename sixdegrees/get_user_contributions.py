@@ -18,19 +18,20 @@ rate_limiter = RateLimiter(max_requests=900, period=60)
 
 EXCLUDE = {"gitter-badger", "dependabot[bot]", "renovate[bot]"}
 
-headers = {
-    "Accept": "application/vnd.github+json",
-    "Authorization": f"Bearer {GITHUB_API_KEY}",
-    "X-GitHub-Api-Version": "2022-11-28",
-}
-
 
 async def get_contributors(
     repository_full_name: str,
     session: aiohttp.client.ClientSession = None,
     max_retries: int = 3,
     delay: float = 1.0,
+    access_token: str = None,
 ) -> list[str]:
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {access_token}",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
     url = f"https://api.github.com/repos/{repository_full_name}/contributors"
     await rate_limiter.wait()
 
@@ -51,7 +52,7 @@ async def get_contributors(
                     json_response = await response.json()
                     if "too large" in json_response.get("message"):
                         return await get_recent_committers(
-                            repository_full_name, session
+                            repository_full_name, session, access_token=access_token
                         )
                     if "rate limit" in json_response.get("message", ""):
                         await RateLimiter.handle_rate_limit(response)
@@ -78,8 +79,15 @@ async def get_contributors(
 
 
 async def get_recent_committers(
-    repository_full_name: str, session: aiohttp.client.ClientSession = None
+    repository_full_name: str,
+    session: aiohttp.client.ClientSession = None,
+    access_token: str = None,
 ) -> list[str]:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {access_token}",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
     # TODO: check larger number of commits
     url = f"https://api.github.com/repos/{repository_full_name}/commits?per_page=100"
     await rate_limiter.wait()
@@ -164,15 +172,22 @@ async def get_repositories_by_user(
     session: aiohttp.client.ClientSession = None,
     max_retries: int = 5,
     delay: float = 1.0,
+    access_token: str = None,
 ) -> list[str]:
-
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {access_token}",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
     await rate_limiter.wait()
     url = f"https://api.github.com/users/{user_name}/repos?type={type}?&per_page={results_per_page}"
 
     attempt = 0
     results = []
 
-    events = await get_user_events(user_name, session=session)
+    events = await get_user_events(
+        user_name, session=session, access_token=access_token
+    )
     repos_from_events = await extract_repos_from_events(events)
 
     while attempt < max_retries:
@@ -243,12 +258,18 @@ async def get_repositories_by_user(
 
 
 async def get_collaborators(
-    user_name: str, session: aiohttp.client.ClientSession = None
+    user_name: str,
+    session: aiohttp.client.ClientSession = None,
+    access_token: str = None,
 ) -> dict[str, set[str]]:
     result: dict[str, set[str]] = defaultdict(set)
-    repository_full_names = await get_repositories_by_user(user_name, session=session)
+    repository_full_names = await get_repositories_by_user(
+        user_name, session=session, access_token=access_token
+    )
     for repository_full_name in repository_full_names:
-        contributors = await get_contributors(repository_full_name, session=session)
+        contributors = await get_contributors(
+            repository_full_name, session=session, access_token=access_token
+        )
         for contributor in contributors:
             if contributor.lower() != user_name.lower():
                 result[contributor].add(repository_full_name)
@@ -258,7 +279,9 @@ async def get_collaborators(
 
 async def main(user_name: str):
     async with aiohttp.ClientSession() as session:
-        repositories = await get_collaborators(user_name, session)
+        repositories = await get_collaborators(
+            user_name, session, access_token=GITHUB_API_KEY
+        )
     pprint(repositories)
 
 

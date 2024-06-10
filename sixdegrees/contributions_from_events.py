@@ -5,10 +5,7 @@ import asyncio
 
 GITHUB_TOKEN = os.getenv("GITHUB_API_KEY")
 USERNAME = "madisonmay"
-headers = {
-    "Authorization": f"token {GITHUB_TOKEN}",
-    "Accept": "application/vnd.github.v3+json",
-}
+
 
 rate_limiter = RateLimiter(max_requests=900, period=60)
 
@@ -16,8 +13,15 @@ events_to_include = ["PushEvent", "CreateEvent", "MemberEvent"]
 
 
 async def get_user_events(
-    username: str, per_page: int = 100, session: aiohttp.client.ClientSession = None
+    username: str,
+    per_page: int = 100,
+    session: aiohttp.client.ClientSession = None,
+    access_token: str = None,
 ):
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
     events = []
     page = 1
     url = f"https://api.github.com/users/{username}/events?per_page={per_page}&page={page}"
