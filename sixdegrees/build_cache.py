@@ -5,12 +5,15 @@ from typing import TypeAlias
 from sqlitedict import SqliteDict
 from sixdegrees.get_user_contributions import get_collaborators
 import sqlitedict
+import os
 
 User: TypeAlias = str
 Repo: TypeAlias = str
 Pair: TypeAlias = tuple[User, list[Repo] | None]
 Path: TypeAlias = list[Pair]
 PathMap: TypeAlias = dict[User, Path]
+
+GITHUB_API_KEY = os.getenv("GITHUB_API_KEY")
 
 
 def initialize_frontier(paths: PathMap):
@@ -40,7 +43,9 @@ async def build_cache(
                     paths["__frontier__"] = frontier
 
                     user, _ = current_path[-1]
-                    collabs = await get_collaborators(user, session=session)
+                    collabs = await get_collaborators(
+                        user, session=session, access_token=GITHUB_API_KEY
+                    )
                     new_paths = [
                         current_path + [(collaborator, list(repos))]
                         for collaborator, repos in collabs.items()
