@@ -1,0 +1,266 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+.navbar {
+  /* Navbar */
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center; /* added */
+  padding: 0px;
+  gap: 16px;
+  position: absolute;
+  width: 100%; /* modified */
+  height: 62px;
+  left: 0; /* modified */
+  top: 16px; /* modified */
+  /* Inside auto layout */
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+}
+
+.navbar-brand {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 35px;
+}
+
+#username {
+  /* Field */
+
+  box-sizing: border-box;
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 20px;
+  gap: 10px;
+
+  width: 327px;
+  height: 62px;
+
+  background: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  /* Button Shadow */
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+
+  /* Inside auto layout */
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+}
+
+#submit {
+  /* Button-New */
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 32px;
+  gap: 8px;
+
+  width: 124px;
+  height: 62px;
+
+  background: #F9C22E;
+  /* Button Shadow */
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+
+  /* Inside auto layout */
+  flex: none;
+  order: 1;
+  flex-grow: 1;
+
+}
+
+#title {
+  /* Title */
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 16px;
+
+  position: absolute;
+  width: 467px;
+  height: 62px;
+  left: calc(50% - 467px/2 - 0.5px);
+  top: 32px;
+
+  font-family: 'Poppins', sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 54px;
+  /* identical to box height */
+
+  color: #000000;
+
+}
+
+#result {
+
+  /* Result */
+
+  box-sizing: border-box;
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  padding: 0px;
+  gap: 18px;
+
+  position: absolute;
+  width: 467px;
+  max-height: 100%;
+  left: calc(50% - 500px/2 - 0.5px);
+  top: 229px;
+
+}
+
+#github-icon {
+  /* mark-github-24 */
+  /* icon: octocat, brand, github, logo */
+  position: absolute;
+  left: 100px;
+  /* width: 43px;
+  height: 44px;
+  left: 1062px;
+  top: 36px; */
+  /* Icon */
+  
+  /* scale/blue/4 */
+  background: whitesmoke;
+  border-radius: 50%; /* Add this line to make the icon circular */
+}
+
+
+
+.login {
+  /* Login */
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0px;
+  gap: 16px;
+
+  position: absolute;
+  width: 467px;
+  height: 62px;
+  left: calc(50% - 467px/2 - 0.5px);
+  top: 32px;
+
+  /* Inside auto layout */
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+
+
+}
+
+.user {
+  /* User */
+
+  width: 467px;
+  height: 71px;
+
+
+  /* Inside auto layout */
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+  border: 1px solid #111111;
+  border-radius: 10px;
+  text-align: center;
+  line-height: 71px;
+  margin-bottom: 10px; /* Add space below user nodes */
+}
+
+.connections {
+
+  margin-top:0px;
+  text-align: left;
+  /* Vector */
+}
+
+.login-button {
+  position: absolute;
+  right: 100px
+}
+
+.user-name{
+  position: relative;
+  right: 5px;
+}
+.row {
+
+  /* 03 Input Field with Button */
+
+  /* Auto layout */
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 0px;
+  gap: 16px;
+
+  position: absolute;
+  width: 467px;
+  height: 62px;
+  left: calc(50% - 467px/2 - 0.5px);
+  top: 124px;
+}
+
+.search {
+
+  position: relative;
+}
+
+/* Spinner Styles */
+.spinner {
+  position: absolute;
+  right: 50%;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #f9c22e;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* * {
+  box-sizing: border-box;
+  border: 1px solid #111111;
+} */
