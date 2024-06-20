@@ -1,7 +1,6 @@
 import logging
 import os
 
-# from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -21,7 +20,6 @@ app = FastAPI()
 GITHUB_APP_ID = os.getenv("GITHUB_APP_ID")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_APP_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_APP_CLIENT_SECRET")
-GITHUB_PRIVATE_KEY = os.getenv("GITHUB_APP_PRIVATE_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 BACKEND_HOST = os.getenv("BACKEND_HOST")
 FRONTEND_HOST = os.getenv("FRONTEND_HOST")
@@ -122,7 +120,6 @@ async def app_login(code: str, request: Request):
 @app.get("/logout")
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url=f"http://{FRONTEND_HOST}")
 
 
 @app.get("/user")

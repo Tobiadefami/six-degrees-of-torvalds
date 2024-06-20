@@ -11,21 +11,19 @@ services:
     - GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}
     - GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET}
     - GITHUB_APP_ID=${GITHUB_APP_ID}
-    - GITHUB_APP_PRIVATE_KEY=${GITHUB_APP_PRIVATE_KEY}
     - SECRET_KEY=${SECRET_KEY}
     - BACKEND_HOST=${BACKEND_HOST}
     - FRONTEND_HOST=${FRONTEND_HOST}
     command: poetry run fastapi run sixdegrees/server.py
   frontend:
-    build: ./REACT/six_degrees_of_connection
+    build: ./REACT/sixdegrees
     ports:
       - "3000:3000"
     volumes:
-      - ./REACT/six_degrees_of_connection:/app
+      - ./REACT/sixdegrees:/app
     environment:
       - BACKEND_HOST=${BACKEND_HOST}
       - FRONTEND_HOST=${FRONTEND_HOST}
-
     command: npm start
   nginx:
     image: nginx:latest
