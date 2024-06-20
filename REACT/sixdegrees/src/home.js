@@ -4,6 +4,7 @@ import api from "./api";
 import arrow from "./arrow.svg";
 import filterResults from "./utils";
 import githubIcon from "./github-icon.svg";
+import queryString from "query-string";
 
 function Home() {
   const [username, setUsername] = useState("");
@@ -23,10 +24,44 @@ function Home() {
       }
     };
     fetchUser();
+
+    const { code } = queryString.parse(window.location.search);
+    if (code) {
+      fetchAccessToken(code);
+    }
   }, []);
 
+  const fetchAccessToken = async (code) => {
+    try {
+      const response = await api.get(`callback?code=${code}`);
+
+      setUser(response.data.user);
+      window.history.pushState({}, document.title, "/");
+    } catch (error) {
+      console.error("Error fetching access token:", error);
+    }
+  };
+
+  const handleLogin = () => {
+    const loginUrl = "http://" + process.env.REACT_APP_BACKEND_HOST + "/login";
+    window.location.href = loginUrl;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.get("/logout");
+      setUser(null);
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
   // This function is triggered when the user clicks the "Submit" button
   const handleSubmit = () => {
+    if (!user) {
+      handleLogin();
+      return;
+    }
     // Reset error state for a fresh attempt
     setError("");
     setLoading(true); // Set loading state to true when the request is in progress
@@ -75,27 +110,29 @@ function Home() {
       <nav className="navbar navbar-expand-lg">
         <div className="search">
           <a className="navbar-brand" href="/">
-            Six Degrees of Torvalds
+            6° of Torvalds
           </a>
         </div>
         <div id="github-icon">
           <a
-            href="https://github.com/tobiadefami/seven-degrees-of-torvalds"
+            href="https://github.com/tobiadefami/six-degrees-of-torvalds"
             target="_blank"
             rel="noopener noreferrer"
           >
             <img src={githubIcon} alt="github_icon" />
           </a>
         </div>
+        <div className="login-button">
+          {user ? (
+            <>
+              <span className="user-name">Welcome, {user.login}</span>
+              <button onClick={handleLogout}>Logout</button>
+            </>
+          ) : (
+            <button onClick={handleLogin}>Login with github</button>
+          )}
+        </div>
       </nav>
-
-      {/* <div className="login">
-        {user ? (
-          <div className="login">
-            <h1>Welcome {user.login}!</h1>
-          </div>
-        ) : null}
-      </div> */}
 
       <div className="row">
         <input

@@ -31,6 +31,11 @@ code {
   flex-grow: 0;
 }
 
+.navbar-brand {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 35px;
+}
+
 #username {
   /* Field */
 
@@ -137,16 +142,13 @@ code {
   /* mark-github-24 */
   /* icon: octocat, brand, github, logo */
   position: absolute;
-  width: 43px;
+  left: 100px;
+  /* width: 43px;
   height: 44px;
   left: 1062px;
-  top: 36px;
+  top: 36px; */
   /* Icon */
-  position: absolute;
-  left: 2.08%;
-  right: 2.08%;
-  top: 3.12%;
-  bottom: 3.41%;
+  
   /* scale/blue/4 */
   background: whitesmoke;
   border-radius: 50%; /* Add this line to make the icon circular */
@@ -203,6 +205,15 @@ code {
   /* Vector */
 }
 
+.login-button {
+  position: absolute;
+  right: 100px
+}
+
+.user-name{
+  position: relative;
+  right: 5px;
+}
 .row {
 
   /* 03 Input Field with Button */
@@ -229,6 +240,8 @@ code {
 
 /* Spinner Styles */
 .spinner {
+  position: absolute;
+  right: 50%;
   border: 4px solid rgba(0, 0, 0, 0.1);
   border-left-color: #f9c22e;
   border-radius: 50%;
