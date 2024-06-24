@@ -14,10 +14,10 @@ RUN pip install poetry
 RUN poetry install --no-dev
 
 # Copy the rest of the application code to the container
-COPY ./sixdegrees /app
+COPY . /app/sixdegrees
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Command to run the application
-CMD ["fastapi", "run", "server.py"]
+CMD ["poetry", "run", "fastapi", "run", "sixdegrees/server.py"]

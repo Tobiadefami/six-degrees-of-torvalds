@@ -2,11 +2,12 @@ version: '3.8'
 
 services:
   backend:
-    build: .
+    image: tobiadefami/six-degrees-of-torvalds-backend:v1.02
+    build: ./sixdegrees
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - ./sixdegrees:/app/sixdegrees
     environment:
     - GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}
     - GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET}
@@ -16,6 +17,7 @@ services:
     - FRONTEND_HOST=${FRONTEND_HOST}
     command: poetry run fastapi run sixdegrees/server.py
   frontend:
+    image: tobiadefami/six-degrees-of-torvalds-frontend
     build: ./REACT/sixdegrees
     ports:
       - "3000:3000"
