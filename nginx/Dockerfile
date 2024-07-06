@@ -1,11 +1,11 @@
-# Use an official Nginx runtime as a parent image
-FROM nginx:alpine
+FROM openresty/openresty:1.21.4.1-0-alpine-apk
+ENV HOST=0.0.0.0
 
 # Copy the custom Nginx configuration file to the container
-COPY default.conf /etc/nginx/conf.d/default.conf
-
+COPY default.conf /usr/local/openresty/nginx/conf/nginx.conf
 # Expose the port Nginx will run on
 EXPOSE 8080
 
 # Command to run Nginx
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/usr/local/openresty/bin/openresty", "-g", "daemon off;"]
+STOPSIGNAL SIGQUIT

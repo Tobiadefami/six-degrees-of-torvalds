@@ -10,10 +10,11 @@ Repo: TypeAlias = str
 Pair: TypeAlias = tuple[User, list[Repo] | None]
 Path: TypeAlias = list[Pair]
 
-start_state = [("tobiadefami", None)]
+start_state = [("madisonmay", None)]
 goal_state = ["torvalds"]
 
 GITHUB_TOKEN = os.getenv("GITHUB_API_KEY")
+
 CACHE: dict[User, Path] = load_cache()
 
 

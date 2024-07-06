@@ -4,35 +4,34 @@ services:
   backend:
     image: tobiadefami/six-degrees-of-torvalds-backend:v1.02
     build: ./sixdegrees
-    ports:
-      - "8000:8000"
     volumes:
       - ./sixdegrees:/app/sixdegrees
     environment:
-    - GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}
-    - GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET}
-    - GITHUB_APP_ID=${GITHUB_APP_ID}
-    - SECRET_KEY=${SECRET_KEY}
-    - BACKEND_HOST=${BACKEND_HOST}
-    - FRONTEND_HOST=${FRONTEND_HOST}
-    command: poetry run fastapi run sixdegrees/server.py
+      - GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}
+      - GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET}
+      - GITHUB_APP_ID=${GITHUB_APP_ID}
+      - SECRET_KEY=${SECRET_KEY}
+      - NGINX_HOST=${NGINX_HOST}
+    network_mode: host
+
   frontend:
-    image: tobiadefami/six-degrees-of-torvalds-frontend
+    image: tobiadefami/six-degrees-of-torvalds-frontend:v1.02
     build: ./REACT/sixdegrees
-    ports:
-      - "3000:3000"
     volumes:
       - ./REACT/sixdegrees:/app
-    environment:
-      - BACKEND_HOST=${BACKEND_HOST}
-      - FRONTEND_HOST=${FRONTEND_HOST}
+    
     command: npm start
+    network_mode: host
+
   nginx:
-    image: nginx:latest
-    ports:
-      - "8080:8080"
+    image: tobiadefami/six-degrees-of-torvalds-nginx:v1.02
+    build: ./nginx
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/default.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+    
     depends_on:
       - backend
       - frontend
+    network_mode: host
+
+
