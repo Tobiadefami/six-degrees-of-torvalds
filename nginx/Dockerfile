@@ -1,5 +1,4 @@
 FROM openresty/openresty:1.21.4.1-0-alpine-apk
-ENV HOST=0.0.0.0
 
 # Copy the custom Nginx configuration file to the container
 COPY default.conf /usr/local/openresty/nginx/conf/nginx.conf

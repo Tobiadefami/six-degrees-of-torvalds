@@ -17,9 +17,9 @@ services:
   frontend:
     image: tobiadefami/six-degrees-of-torvalds-frontend:v1.02
     build: ./REACT/sixdegrees
-    volumes:
-      - ./REACT/sixdegrees:/app
-    
+    # volumes:
+    #   - ./REACT/sixdegrees:/app
+
     command: npm start
     network_mode: host
 
@@ -28,7 +28,7 @@ services:
     build: ./nginx
     volumes:
       - ./nginx/default.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
-    
+
     depends_on:
       - backend
       - frontend
