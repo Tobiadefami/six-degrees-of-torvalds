@@ -16,9 +16,11 @@ RUN poetry install --no-dev
 # Copy the rest of the application code to the container
 COPY . /app/sixdegrees
 
+# Debugging step to list contents
+RUN ls /app/sixdegrees
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Command to run the application
-CMD ["poetry", "run", "fastapi", "run", "sixdegrees/server.py"]
-# CMD ["poetry", "run", "uvicorn", "sixdegrees.server:app", "--host", "0.0.0.0", "--port", "8000"]
+# CMD ["poetry", "run", "fastapi", "run", "sixdegrees/server.py"]
+CMD ["poetry", "run", "uvicorn", "sixdegrees.server:app", "--host", "0.0.0.0", "--port", "8000"]

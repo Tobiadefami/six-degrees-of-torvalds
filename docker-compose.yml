@@ -32,6 +32,7 @@ services:
     depends_on:
       - backend
       - frontend
+    
     network_mode: host
 
 
