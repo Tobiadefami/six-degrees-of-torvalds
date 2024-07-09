@@ -31,7 +31,8 @@ code {
   flex-grow: 0;
 }
 
-.navbar-brand {
+.navbar .navbar-brand {
+  position: relative;
   font-family: 'Courier New', Courier, monospace;
   font-size: 35px;
 }
@@ -142,14 +143,8 @@ code {
   /* mark-github-24 */
   /* icon: octocat, brand, github, logo */
   position: absolute;
-  left: 100px;
-  /* width: 43px;
-  height: 44px;
-  left: 1062px;
-  top: 36px; */
-  /* Icon */
-  
-  /* scale/blue/4 */
+  left: 50px;
+ 
   background: whitesmoke;
   border-radius: 50%; /* Add this line to make the icon circular */
 }
@@ -207,12 +202,13 @@ code {
 
 .login-button {
   position: absolute;
-  right: 100px
+  right: 50px
 }
 
-.user-name{
-  position: relative;
+.login-button .user-name{
   right: 5px;
+
+  
 }
 .row {
 

@@ -1,7 +1,7 @@
 import React from "react";
 const Login = () => {
   const handleLogin = () => {
-    window.location.href = "http://" + process.env.BACKEND_HOST + "/login";
+    window.location.href = "/login";
   };
 
   return (

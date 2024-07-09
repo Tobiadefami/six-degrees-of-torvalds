@@ -43,7 +43,7 @@ function Home() {
   };
 
   const handleLogin = () => {
-    const loginUrl = "http://" + process.env.REACT_APP_BACKEND_HOST + "/login";
+    const loginUrl = "/api/login";
     window.location.href = loginUrl;
   };
 
@@ -70,7 +70,7 @@ function Home() {
 
     // Make an API request to the FastAPI backend
     api
-      .post(`search/${username}`)
+      .post(`/search/${username}`)
       .then((response) => {
         // Handle successful response, setting the data in `results`
         const filtered = filterResults(response.data);

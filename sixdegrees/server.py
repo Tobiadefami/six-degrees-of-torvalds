@@ -21,11 +21,9 @@ GITHUB_APP_ID = os.getenv("GITHUB_APP_ID")
 GITHUB_CLIENT_ID = os.getenv("GITHUB_APP_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_APP_CLIENT_SECRET")
 SECRET_KEY = os.getenv("SECRET_KEY")
-BACKEND_HOST = os.getenv("BACKEND_HOST")
-FRONTEND_HOST = os.getenv("FRONTEND_HOST")
 NGINX_HOST = os.getenv("NGINX_HOST")
-REDIRECT_URI = f"http://{BACKEND_HOST}/app-login"
-CALLBACK_URI = f"http://{BACKEND_HOST}/callback"
+REDIRECT_URI = f"https://{NGINX_HOST}/api/app-login"
+print(f"{NGINX_HOST=}")
 
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
     authorizationUrl="https://github.com/login/oauth/authorize",
@@ -33,7 +31,7 @@ oauth2_scheme = OAuth2AuthorizationCodeBearer(
 )
 
 
-origins = [f"http://{FRONTEND_HOST}"]
+origins = [f"https://{NGINX_HOST}"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -114,7 +112,7 @@ async def app_login(code: str, request: Request):
         logging.debug("Session user set:", request.session["user"])
         print("user set in session", request.session["user"])
         # Redirect to the home page
-        return RedirectResponse(url=f"http://{FRONTEND_HOST}")
+        return RedirectResponse(url=f"https://{NGINX_HOST}")
 
 
 @app.get("/logout")
