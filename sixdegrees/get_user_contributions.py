@@ -259,20 +259,25 @@ async def get_repositories_by_user(
 
 async def get_collaborators(
     user_name: str,
-    session: aiohttp.client.ClientSession = None,
+    session: aiohttp.ClientSession = None,
     access_token: str = None,
 ) -> dict[str, set[str]]:
     result: dict[str, set[str]] = defaultdict(set)
-    repository_full_names = await get_repositories_by_user(
-        user_name, session=session, access_token=access_token
-    )
-    for repository_full_name in repository_full_names:
+
+    async def process_repository(repository_full_name: str):
         contributors = await get_contributors(
             repository_full_name, session=session, access_token=access_token
         )
         for contributor in contributors:
             if contributor.lower() != user_name.lower():
                 result[contributor].add(repository_full_name)
+
+    repository_full_names = await get_repositories_by_user(
+        user_name, session=session, access_token=access_token
+    )
+
+    tasks = [process_repository(repo) for repo in repository_full_names]
+    await asyncio.gather(*tasks)
 
     return result
 

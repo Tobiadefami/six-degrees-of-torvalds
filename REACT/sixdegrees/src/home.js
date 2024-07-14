@@ -19,6 +19,7 @@ function Home() {
       try {
         const response = await api.get("user");
         setUser(response.data);
+        // setUsername(response.data.login);
       } catch (error) {
         console.error("Error fetching user:", error);
       }
@@ -34,7 +35,6 @@ function Home() {
   const fetchAccessToken = async (code) => {
     try {
       const response = await api.get(`callback?code=${code}`);
-
       setUser(response.data.user);
       window.history.pushState({}, document.title, "/");
     } catch (error) {
@@ -56,25 +56,21 @@ function Home() {
       console.error("Error logging out:", error);
     }
   };
-  // This function is triggered when the user clicks the "Submit" button
+
   const handleSubmit = () => {
     if (!user) {
       handleLogin();
       return;
     }
-    // Reset error state for a fresh attempt
     setError("");
-    setLoading(true); // Set loading state to true when the request is in progress
-    setResults([]); // Reset results state for a fresh attempt
-    setNoConnection(false); // Reset noConnection state for a fresh attempt
+    setLoading(true);
+    setResults([]);
+    setNoConnection(false);
 
-    // Make an API request to the FastAPI backend
     api
       .post(`/search/${username}`)
       .then((response) => {
-        // Handle successful response, setting the data in `results`
         const filtered = filterResults(response.data);
-
         if (filtered.length === 0) {
           setNoConnection(true);
         } else {
@@ -83,54 +79,74 @@ function Home() {
         setLoading(false);
       })
       .catch((err) => {
-        // Log the error for debugging purposes
         console.error("Error fetching data:", err);
         setLoading(false);
-        // Provide user-friendly feedback
         if (err.response) {
-          // Server responded with a status outside the 2xx range
           setError(
             `Error: ${err.response.status} - ${err.response.data.detail}`
           );
         } else if (err.request) {
-          // No response received from the server
           setError(
             "No response received. Check if the backend server is running."
           );
         } else {
-          // Something went wrong while setting up the request
           setError(`Request error: ${err.message}`);
         }
       });
   };
-  // Filter results to include only the last repository link for each user
 
   return (
     <div>
-      <nav className="navbar navbar-expand-lg">
-        <div className="search">
-          <a className="navbar-brand" href="/">
-            6° of Torvalds
-          </a>
-        </div>
-        <div id="github-icon">
+      <nav className="navbar navbar-expand-lg navbar-light bg-light">
+        <div className="container-fluid">
           <a
+            className="navbar-brand"
             href="https://github.com/tobiadefami/six-degrees-of-torvalds"
             target="_blank"
             rel="noopener noreferrer"
           >
-            <img src={githubIcon} alt="github_icon" />
+            <img src={githubIcon} alt="github_icon" className="github-icon" />
           </a>
-        </div>
-        <div className="login-button">
-          {user ? (
-            <>
-              <span className="user-name">Welcome, {user.login}</span>
-              <button onClick={handleLogout}>Logout</button>
-            </>
-          ) : (
-            <button onClick={handleLogin}>Login with github</button>
-          )}
+          <div className="mx-auto">
+            <a className="navbar-brand" href="/">
+              Degrees of Torvalds
+            </a>
+          </div>
+          <button
+            className="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
+          <div className="collapse navbar-collapse" id="navbarNav">
+            <div className="ms-auto d-flex">
+              {user ? (
+                <>
+                  <span className="navbar-text me-2">
+                    Welcome, {user.login}
+                  </span>
+                  <button
+                    className="btn btn-outline-danger"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="btn btn-outline-primary"
+                  onClick={handleLogin}
+                >
+                  Login with GitHub
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </nav>
 
@@ -138,12 +154,12 @@ function Home() {
         <input
           id="username"
           type="text"
-          placeholder="Enter your username"
+          placeholder={user ? "Enter your username" : "Sign in to search"}
           value={username}
+          disabled={!user}
           onChange={(e) => setUsername(e.target.value)}
         />
-
-        <button id="submit" onClick={handleSubmit}>
+        <button id="submit" onClick={handleSubmit} disabled={!user}>
           Submit
         </button>
       </div>
@@ -152,6 +168,11 @@ function Home() {
 
       <div id="result">
         {noConnection && <p>No connection found</p>}
+        {results && results.length > 0 && (
+          <div>
+            You are {results.length - 1} degrees away from Linus Torvalds.
+          </div>
+        )}
         {loading && <div className="spinner"></div>}
         {results.map((item, index) => (
           <React.Fragment key={index}>
@@ -167,7 +188,6 @@ function Home() {
                 </a>
               </div>
             ) : null}
-
             <div className="user">
               <a
                 href={`https://github.com/${item[1]}`}
