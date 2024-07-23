@@ -1,3 +1,5 @@
+import "./index.css";
+
 import React, { useEffect, useState } from "react";
 
 import api from "./api";
@@ -11,8 +13,18 @@ function Home() {
   const [results, setResults] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [message, setMessage] = useState("");
   const [noConnection, setNoConnection] = useState(false);
   const [user, setUser] = useState(null);
+
+  const messages = [
+    "Did you know? Linus Torvalds created Git.",
+    "Fun fact: The Linux kernel was first released in 1991.",
+    "Trivia: Linus Torvalds named the Linux kernel after himself.",
+    "Interesting: Git was originally developed to manage the Linux kernel.",
+    "Did you know? Linux powers most of the world's supercomputers.",
+  ];
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -66,10 +78,25 @@ function Home() {
     setLoading(true);
     setResults([]);
     setNoConnection(false);
+    setProgress(0);
+    setMessage(messages[0]);
+
+    const tickInterval = 2000;
+    const estimatedTime = 10000; // Estimated time in milliseconds (e.g., 10 seconds)
+
+    const interval = setInterval(() => {
+      setProgress((prevProgress) => {
+        const nextProgress =
+          prevProgress + (tickInterval / estimatedTime) * 100;
+        return nextProgress >= 100 ? 100 : nextProgress;
+      });
+      setMessage(messages[Math.floor(Math.random() * messages.length)]);
+    }, tickInterval);
 
     api
       .post(`/search/${username}`)
       .then((response) => {
+        clearInterval(interval);
         const filtered = filterResults(response.data);
         if (filtered.length === 0) {
           setNoConnection(true);
@@ -77,8 +104,10 @@ function Home() {
           setResults(filtered);
         }
         setLoading(false);
+        setProgress(100); // Ensure progress is set to 100% when the response is received
       })
       .catch((err) => {
+        clearInterval(interval);
         console.error("Error fetching data:", err);
         setLoading(false);
         if (err.response) {
@@ -92,8 +121,19 @@ function Home() {
         } else {
           setError(`Request error: ${err.message}`);
         }
+        setProgress(0);
       });
   };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    }
+  };
+
+  useEffect(() => {
+    console.log(progress);
+  }, [progress]);
 
   return (
     <div>
@@ -142,7 +182,7 @@ function Home() {
                   className="btn btn-outline-primary"
                   onClick={handleLogin}
                 >
-                  Login with GitHub
+                  Login
                 </button>
               )}
             </div>
@@ -158,6 +198,7 @@ function Home() {
           value={username}
           disabled={!user}
           onChange={(e) => setUsername(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
         <button id="submit" onClick={handleSubmit} disabled={!user}>
           Submit
@@ -173,7 +214,17 @@ function Home() {
             You are {results.length - 1} degrees away from Linus Torvalds.
           </div>
         )}
-        {loading && <div className="spinner"></div>}
+        {loading && (
+          <>
+            <div className="progress-container">
+              <div
+                className="progress-bar"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <div className="progress-message">{message}</div>
+          </>
+        )}
         {results.map((item, index) => (
           <React.Fragment key={index}>
             {item[0] ? (
