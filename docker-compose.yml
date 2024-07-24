@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: tobiadefami/six-degrees-of-torvalds-backend:v1.02
+    image: tobiadefami/six-degrees-of-torvalds-backend:v1.03.1
     build: ./sixdegrees
     volumes:
       - ./sixdegrees:/app/sixdegrees
@@ -10,21 +10,22 @@ services:
       - GITHUB_APP_CLIENT_ID=${GITHUB_APP_CLIENT_ID}
       - GITHUB_APP_CLIENT_SECRET=${GITHUB_APP_CLIENT_SECRET}
       - GITHUB_APP_ID=${GITHUB_APP_ID}
+      - SIX_DEGREES_ENVIRONMENT=${SIX_DEGREES_ENVIRONMENT}
       - SECRET_KEY=${SECRET_KEY}
       - NGINX_HOST=${NGINX_HOST}
     network_mode: host
 
   frontend:
-    image: tobiadefami/six-degrees-of-torvalds-frontend:v1.02
+    image: tobiadefami/six-degrees-of-torvalds-frontend:v1.03.2
     build: ./REACT/sixdegrees
-    # volumes:
-    #   - ./REACT/sixdegrees:/app
+    volumes:
+      - ./REACT/sixdegrees:/app
 
     command: npm start
     network_mode: host
 
   nginx:
-    image: tobiadefami/six-degrees-of-torvalds-nginx:v1.02
+    image: tobiadefami/six-degrees-of-torvalds-nginx:v1.03
     build: ./nginx
     volumes:
       - ./nginx/default.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
