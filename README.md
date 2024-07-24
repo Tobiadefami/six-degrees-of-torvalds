@@ -15,18 +15,13 @@ This project aims to find a connection between a given GitHub user and Linus Tor
 
 The entire project runs on Docker. Follow the steps below to start the server using Docker:
 
-1. **Build the Docker Image**:
+1. **Build and Run the Docker Image**:
    ```sh
-   docker build -t sixdegrees .
+   docker compose up --build
    ```
-
-2. **Run the Docker Container**:
-   ```sh
-   docker run -p 3000:3000 sixdegrees
-   ```
-
-3. **Access the Application**:
-   Open your web browser and navigate to `http://localhost:3000`.
+   
+2. **Access the Application**:
+   Open your web browser and navigate to `http://0.0.0.0:8080`.
 
 ## Future Enhancements
 
