@@ -1,4 +1,4 @@
-# Six Degrees of Linus Torvalds
+# Degrees of Linus Torvalds
 
 ## Overview
 
