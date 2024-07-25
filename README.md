@@ -1,5 +1,7 @@
 # Degrees of Linus Torvalds
 
+![Degrees of Connection](assets/degrees_of_connection.png)
+
 ## Overview
 
 This project aims to find a connection between a given GitHub user and Linus Torvalds using the breadth-first search algorithm. The current scope is limited to finding connections to Linus Torvalds, but future updates may allow searching for connections between any two users.
@@ -36,7 +38,6 @@ Contributions are welcome! Please fork the repository and submit a pull request 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
 
 
 
