@@ -1,6 +1,7 @@
 # Degrees of Linus Torvalds
+https://www.sixdegreesofgithub.com
 
-![Degrees of Connection](assets/degrees_of_connection.png)
+<img src="./assets/degrees_of_connection.png"  width="300" height="300">
 
 ## Overview
 
