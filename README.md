@@ -70,5 +70,6 @@ To enhance performance and minimize API calls, we build a cache using a BFS algo
 Contributions are welcome! To contribute, please fork the repository, make your changes, and submit a pull request.
 
 ### Future Enhancements
-Expanding Search Capability: Allow finding connections between any two GitHub users.
-UI Improvements: Enhance interface for better mobile usability.
+
+- Expanding Search Capability: Allow finding connections between any two GitHub users.
+- UI Improvements: Enhance interface for better mobile usability.
