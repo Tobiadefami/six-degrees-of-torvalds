@@ -18,13 +18,13 @@ ENV PATH="/root/.local/bin:$PATH"
 # Copy the pyproject.toml and poetry.lock files to the container
 COPY pyproject.toml poetry.lock /app/
 
-# Install the dependencies
+# Install the dependencies, updating the lock file if necessary
 RUN poetry config virtualenvs.create false \
+    && poetry lock --no-update \
     && poetry install --only main
 
 # Copy the rest of the application code to the container
 COPY . /app/sixdegrees
-
 
 # Expose the port the app runs on
 EXPOSE 8000
