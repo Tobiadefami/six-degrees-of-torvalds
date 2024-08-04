@@ -5,11 +5,9 @@ https://www.sixdegreesofgithub.com
 
 Explore GitHub connections like never before. Discover how you or any other GitHub user connects to Linus Torvalds through shared repositories.
 
-![Degrees of Connection](./assets/degrees_of_connection.png)
-
 ## Introduction
 
-**Degrees of Linus Torvalds** applies the ![Six Degrees of Kevin Bacon](https://oracleofbacon.org/) concept to GitHub users, using a breadth-first search (BFS) algorithm to map the shortest path of collaboration from any given GitHub user to Linus Torvalds via shared repositories.
+**Degrees of Linus Torvalds** applies the [Six Degrees of Kevin Bacon](https://oracleofbacon.org/) concept to GitHub users, using a breadth-first search (BFS) algorithm to map the shortest path of collaboration from any given GitHub user to Linus Torvalds via shared repositories.
 
 ## How Connections Are Formed
 
