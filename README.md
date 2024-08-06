@@ -29,10 +29,10 @@ The BFS algorithm navigates these connections by expanding from the starting use
 
 - **Docker**: Ensure Docker is installed on your system, as it is required to containerize and run the services. This includes docker-compose for handling the multi-container setup.
 
-### GitHub OAuth Setup
+### GitHub APP Setup
 
 For user authentication, a GitHub OAuth App is required:
-1. Create an OAuth App in your GitHub account under 'Developer settings' > 'OAuth Apps'.
+1. Create an OAuth App in your GitHub account under 'Developer settings' > 'Github Apps'.
 2. Use `http://0.0.0.0:8080` as the Homepage URL and `http://0.0.0.0:8080/api/app-login` as the Authorization callback URL.
 3. Record your Client ID and Client Secret for environment setup.
 
