@@ -17,14 +17,17 @@ Each GitHub user is represented as a **node**. A **repository** serves as an **e
 
 ### Degrees of Connection
 
+In this project, the concept of "degrees of connection" is similar to the theory of "six degrees of separation." Each degree represents a step or layer of collaboration between users on GitHub:
+
 - **First Degree Connection**: Users who have directly contributed to the same repository.
-- **Second Degree Connection**: Users connected through another user who shares repositories with both. The BFS algorithm explores these connections to map pathways from a starting user to Linus Torvalds.
+- **Other Degree Connections**: Extends beyond the first degree to represent users who are connected through multiple intermediaries. For example, a third-degree connection would involve two intermediary users who link the start and end user through shared repository contributions.
+The BFS algorithm navigates these connections by expanding from the starting user and exploring each subsequent layer of connected users, dynamically assessing pathways that lead to Linus Torvalds or any designated endpoint user.
 
 ## Installation and Setup
 
 ### Prerequisites
 
-- **Docker**: Ensure Docker is installed on your system, as it is required to containerize and run the services. This include docker-compose for handling the multi-container setup.
+- **Docker**: Ensure Docker is installed on your system, as it is required to containerize and run the services. This includes docker-compose for handling the multi-container setup.
 
 ### GitHub OAuth Setup
 
@@ -37,7 +40,7 @@ For user authentication, a GitHub OAuth App is required:
 
 Add these environment variables to your bashrc
 
-```plaintext
+```bash
 GITHUB_APP_CLIENT_ID=<your_github_app_client_id>
 GITHUB_APP_CLIENT_SECRET=<your_github_app_client_secret>
 GITHUB_APP_ID=<your_github_app_id>
