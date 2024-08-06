@@ -56,7 +56,16 @@ Run this code in your terminal
 ```bash
 docker compose up --build
 ```
-Access the application at http://0.0.0.0:8080
+## Accessing the Application
+
+- **Nginx**: Routes all traffic through port 8080.
+  - Access the application frontend via `http://0.0.0.0:8080`.
+  - API requests should be made to `http://0.0.0.0:8080/api/`. For example, to login, you will need to access `http://0.0.0.0:8080/api/login`.
+
+- **Development Server**:
+  - During development, the React server can also be accessed directly at `http://0.0.0.0:3000` for frontend-only changes.
+
+Ensure that the environment variables `FRONTEND_HOST` and `BACKEND_HOST` are set appropriately to reflect where your services are running. Typically, this would be `0.0.0.0:3000` for the frontend and `0.0.0.0:8000` for the backend when running locally.
 
 
 ### Addressing User Authentication Concerns
