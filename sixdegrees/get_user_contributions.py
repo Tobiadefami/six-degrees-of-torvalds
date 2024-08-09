@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+from typing import Any
 from collections import defaultdict
 from pprint import pprint
 from sixdegrees.contributions_from_events import (
@@ -10,6 +11,7 @@ from sixdegrees.contributions_from_events import (
 import aiohttp
 import logging
 from sixdegrees.rate_limiter import RateLimiter
+from sixdegrees.filtering_conditions import filter_repos
 
 GITHUB_API_KEY = os.getenv("GITHUB_API_KEY")
 NEXT_PATTERN = re.compile(r'(?<=<)([\S]*)(?=>; rel="next")', re.IGNORECASE)
@@ -126,9 +128,9 @@ async def get_recent_committers(
                     return []
                 else:
                     response.raise_for_status()
-                # if response.status != 200:
-                #     print(response.status)
-                #     raise Exception(response.content)
+                if response.status != 200:
+                    print(response.status)
+                    raise Exception(response.content)
         except aiohttp.ClientConnectionError as e:
             logger.error(
                 f"Error getting recent committers for {repository_full_name}: {str(e)}"
@@ -205,14 +207,14 @@ async def get_repositories_by_user(
                     return []
 
                 if response.status != 200:
-                    logger.error(response.status)
+                    logger.info(response.status)
                     raise Exception(response.content)
                 try:
                     json_data = await response.json()
                     if isinstance(json_data, list):
                         results.extend(json_data)
                     else:
-                        logger.error("Unexpected json data", json_data)
+                        logger.info("Unexpected json data", json_data)
 
                 except Exception as e:
                     logger.error("Error parsing json", str(e))
@@ -230,31 +232,24 @@ async def get_repositories_by_user(
                             if isinstance(json_data, list):
                                 results.extend(json_data)
                             else:
-                                logger.error("Unexpected json data", json_data)
+                                logger.info("Unexpected json data", json_data)
 
                             header = response.headers.get("Link")
                             next_link = NEXT_PATTERN.search(header)
                     except Exception as e:
                         logger.error("Error getting next page", str(e))
                         continue
-                def filtered_repos(repo):
-                    if not isinstance(repo, dict):
-                        return False
-                    conditions = [
-                        not repo.get("fork", True),
-                        not repo.get("archived", True),
-                    ]
-                    return all(conditions)
+
 
                 repos = [
                     repo["full_name"]
                     for repo in results
-                    if isinstance(repo, dict) and filtered_repos(repo)
+                    if isinstance(repo, dict) and filter_repos(repo)
                 ]
                 print(f"Found repos: {repos}")
-                for repository in repos_from_events:
-                    if repository not in repos:
-                        repos.append(repository)
+                # for repository in repos_from_events:
+                #     if repository not in repos:
+                #         repos.append(repository)
                 return repos
 
             except Exception as e:
@@ -278,9 +273,10 @@ async def get_collaborators(
         contributors = await get_contributors(
             repository_full_name, session=session, access_token=access_token
         )
-        for contributor in contributors:
-            if contributor.lower() != user_name.lower():
-                result[contributor].add(repository_full_name)
+        if user_name.lower() in contributors:
+            for contributor in contributors:
+                if contributor.lower() != user_name.lower():
+                    result[contributor].add(repository_full_name)
 
     repository_full_names = await get_repositories_by_user(
         user_name, session=session, access_token=access_token
