@@ -46,7 +46,7 @@ async def get_contributors(
                 if response.status == 200:
                     contributors = await response.json()
                     return [
-                        contrib["login"]
+                        contrib["login"].lower()
                         for contrib in contributors
                         if contrib["login"] not in EXCLUDE
                     ]
@@ -115,7 +115,7 @@ async def get_recent_committers(
                         if login is None:
                             login = (commit.get("committer") or {}).get("login")
                         if login is not None:
-                            contributors.add(login)
+                            contributors.add(login.lower())
                         return list(contributors)
 
                 elif response.status == 403 or response.status == 429:
@@ -247,9 +247,9 @@ async def get_repositories_by_user(
                     if isinstance(repo, dict) and filter_repos(repo)
                 ]
                 print(f"Found repos: {repos}")
-                # for repository in repos_from_events:
-                #     if repository not in repos:
-                #         repos.append(repository)
+                for repository in repos_from_events:
+                    if repository not in repos:
+                        repos.append(repository)
                 return repos
 
             except Exception as e:
@@ -273,7 +273,7 @@ async def get_collaborators(
         contributors = await get_contributors(
             repository_full_name, session=session, access_token=access_token
         )
-        if user_name.lower() in contributors:
+        if user_name in contributors:
             for contributor in contributors:
                 if contributor.lower() != user_name.lower():
                     result[contributor].add(repository_full_name)
