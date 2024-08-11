@@ -1,7 +1,7 @@
 import asyncio
 import os
 import re
-from typing import Any
+from typing import Any, List, Dict
 from collections import defaultdict
 from pprint import pprint
 from sixdegrees.contributions_from_events import (
@@ -168,99 +168,176 @@ async def get_recent_committers(
             return []
 
 
+# async def get_repositories_by_user(
+#     user_name: str,
+#     results_per_page: int = 100,
+#     type: str = "all",
+#     session: aiohttp.client.ClientSession = None,
+#     max_retries: int = 5,
+#     delay: float = 1.0,
+#     access_token: str = None,
+# ) -> list[str]:
+#     headers = {
+#         "Accept": "application/vnd.github+json",
+#         "Authorization": f"Bearer {access_token}",
+#         "X-GitHub-Api-Version": "2022-11-28",
+#     }
+#     await rate_limiter.wait()
+#     url = f"https://api.github.com/users/{user_name}/repos?type={type}?&per_page={results_per_page}"
+
+#     attempt = 0
+#     results = []
+
+#     events = await get_user_events(
+#         user_name, session=session, access_token=access_token
+#     )
+#     repos_from_events = await extract_repos_from_events(events)
+
+#     while attempt < max_retries:
+#         async with session.get(url, headers=headers) as response:
+#             try:
+#                 logger.info(f"Getting repos for {user_name}: {response.status}")
+#                 if response.status in (403,):
+#                     json_response = await response.json()
+#                     print(json_response)
+#                     if "rate limit" in json_response.get("message", ""):
+#                         await RateLimiter.handle_rate_limit(response=response)
+#                         continue
+#                 if response.status in (204, 403, 404):
+#                     return []
+
+#                 if response.status != 200:
+#                     logger.info(response.status)
+#                     raise Exception(response.content)
+#                 try:
+#                     json_data = await response.json()
+#                     if isinstance(json_data, list):
+#                         results.extend(json_data)
+#                     else:
+#                         logger.info("Unexpected json data", json_data)
+
+#                 except Exception as e:
+#                     logger.error("Error parsing json", str(e))
+#                     continue
+
+#                 header = response.headers.get("Link", "")
+#                 next_link = NEXT_PATTERN.search(header)
+
+#                 while next_link:
+#                     try:
+#                         async with session.get(
+#                             next_link.group(0), headers=headers
+#                         ) as response:
+#                             json_data = await response.json()
+#                             if isinstance(json_data, list):
+#                                 results.extend(json_data)
+#                             else:
+#                                 logger.info("Unexpected json data", json_data)
+
+#                             header = response.headers.get("Link")
+#                             next_link = NEXT_PATTERN.search(header)
+#                     except Exception as e:
+#                         logger.error("Error getting next page", str(e))
+#                         continue
+
+
+#                 repos = [
+#                     repo["full_name"]
+#                     for repo in results
+#                     if isinstance(repo, dict) and filter_repos(repo)
+#                 ]
+#                 print(f"Found repos: {repos}")
+#                 for repository in repos_from_events:
+#                     if repository not in repos:
+#                         repos.append(repository)
+#                 print(f"LENGTH OF REPOS {len(repos)}")
+#                 return repos
+
+#             except Exception as e:
+#                 logger.error(f"Error getting repos for {user_name}: {str(e)}")
+#                 attempt += 1
+#                 await asyncio.sleep(delay * (5**attempt))
+#                 if attempt >= max_retries:
+#                     raise
+
+#     raise Exception("Max retries exceeded")
+#
 async def get_repositories_by_user(
     user_name: str,
-    results_per_page: int = 100,
-    type: str = "all",
-    session: aiohttp.client.ClientSession = None,
+    session: aiohttp.ClientSession,
+    access_token: str,
+    max_repos: int = 3000,
     max_retries: int = 5,
-    delay: float = 1.0,
-    access_token: str = None,
-) -> list[str]:
+    delay: float = 1.0
+) -> List[str]:
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {access_token}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    await rate_limiter.wait()
-    url = f"https://api.github.com/users/{user_name}/repos?type={type}?&per_page={results_per_page}"
 
-    attempt = 0
-    results = []
-
-    events = await get_user_events(
-        user_name, session=session, access_token=access_token
-    )
-    repos_from_events = await extract_repos_from_events(events)
-
-    while attempt < max_retries:
-        async with session.get(url, headers=headers) as response:
+    async def fetch_page(url: str) -> tuple[List[Dict[str, Any]], str | None]:
+        await rate_limiter.wait()
+        attempt = 0
+        while attempt < max_retries:
             try:
-                logger.info(f"Getting repos for {user_name}: {response.status}")
-                if response.status in (403,):
-                    json_response = await response.json()
-                    print(json_response)
-                    if "rate limit" in json_response.get("message", ""):
-                        await RateLimiter.handle_rate_limit(response=response)
-                        continue
-                if response.status in (204, 403, 404):
-                    return []
-
-                if response.status != 200:
-                    logger.info(response.status)
-                    raise Exception(response.content)
-                try:
-                    json_data = await response.json()
-                    if isinstance(json_data, list):
-                        results.extend(json_data)
+                async with session.get(url, headers=headers) as response:
+                    logger.info(f"Fetching repos page for {user_name}: {response.status}")
+                    if response.status == 200:
+                        repos = await response.json()
+                        links = response.links
+                        next_url = links.get('next', {}).get('url')
+                        return repos, next_url
+                    elif response.status in (403, 429):
+                        json_response = await response.json()
+                        if "rate limit" in json_response.get("message", ""):
+                            await RateLimiter.handle_rate_limit(response)
+                            continue
+                    elif response.status in (204, 404):
+                        return [], None
                     else:
-                        logger.info("Unexpected json data", json_data)
-
-                except Exception as e:
-                    logger.error("Error parsing json", str(e))
-                    continue
-
-                header = response.headers.get("Link", "")
-                next_link = NEXT_PATTERN.search(header)
-
-                while next_link:
-                    try:
-                        async with session.get(
-                            next_link.group(0), headers=headers
-                        ) as response:
-                            json_data = await response.json()
-                            if isinstance(json_data, list):
-                                results.extend(json_data)
-                            else:
-                                logger.info("Unexpected json data", json_data)
-
-                            header = response.headers.get("Link")
-                            next_link = NEXT_PATTERN.search(header)
-                    except Exception as e:
-                        logger.error("Error getting next page", str(e))
-                        continue
-
-
-                repos = [
-                    repo["full_name"]
-                    for repo in results
-                    if isinstance(repo, dict) and filter_repos(repo)
-                ]
-                print(f"Found repos: {repos}")
-                for repository in repos_from_events:
-                    if repository not in repos:
-                        repos.append(repository)
-                return repos
-
-            except Exception as e:
-                logger.error(f"Error getting repos for {user_name}: {str(e)}")
+                        response.raise_for_status()
+            except aiohttp.ClientConnectionError as e:
+                logger.error(f"Connection error, attempt {attempt + 1} of {max_retries}: {str(e)}")
                 attempt += 1
-                await asyncio.sleep(delay * (5**attempt))
+                await asyncio.sleep(delay * (2**attempt))  # Exponential backoff
+            except Exception as e:
+                logger.error(f"Error fetching repos page, attempt {attempt + 1}: {str(e)}")
+                attempt += 1
                 if attempt >= max_retries:
                     raise
+                await asyncio.sleep(delay * (2**attempt))
+        raise Exception("Max retries exceeded")
 
-    raise Exception("Max retries exceeded")
+    async def fetch_all_pages() -> List[Dict[str, Any]]:
+        all_repos = []
+        next_url = f"https://api.github.com/users/{user_name}/repos?type=all&per_page=100"
 
+        while next_url and len(all_repos) < max_repos:
+            repos, next_url = await fetch_page(next_url)
+            all_repos.extend(repos)
+            if len(all_repos) >= max_repos:
+                break
+
+        return all_repos[:max_repos]
+
+    all_repos = await fetch_all_pages()
+
+    filtered_repos = [
+        repo["full_name"]
+        for repo in all_repos
+        if isinstance(repo, dict) and filter_repos(repo)
+    ]
+
+    events = await get_user_events(user_name, session=session, access_token=access_token)
+    repos_from_events = await extract_repos_from_events(events)
+
+    for repository in repos_from_events:
+        if repository not in filtered_repos:
+            filtered_repos.append(repository)
+    print(f"LENGTH OF FOUND REPOS: {len(filtered_repos)}")
+    logger.info(f"Found {len(filtered_repos)} repos for {user_name}")
+    return filtered_repos
 
 async def get_collaborators(
     user_name: str,
@@ -290,11 +367,11 @@ async def get_collaborators(
 
 async def main(user_name: str):
     async with aiohttp.ClientSession() as session:
-        repositories = await get_collaborators(
-            user_name, session, access_token=GITHUB_API_KEY
+        repositories = await get_repositories_by_user(
+            user_name, session=session, access_token=GITHUB_API_KEY
         )
     pprint(repositories)
 
 
 if __name__ == "__main__":
-    asyncio.run(main("torvalds"))
+    asyncio.run(main("mattn"))
