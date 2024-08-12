@@ -330,21 +330,18 @@ async def get_repositories_by_user(
         all_repos = []
         next_url = f"https://api.github.com/users/{user_name}/repos?type=all&per_page=100"
 
-        while next_url and len(all_repos) < max_repos:
+        while next_url:
             repos, next_url = await fetch_page(next_url)
             all_repos.extend(repos)
-            if len(all_repos) >= max_repos:
-                break
 
-        return all_repos[:max_repos]
+        filtered_repos = [
+                repo["full_name"]
+                for repo in all_repos
+                if isinstance(repo, dict) and filter_repos(repo)
+            ]
+        return filtered_repos
 
-    all_repos = await fetch_all_pages()
-
-    filtered_repos = [
-        repo["full_name"]
-        for repo in all_repos
-        if isinstance(repo, dict) and filter_repos(repo)
-    ]
+    filtered_repos = await fetch_all_pages()
 
     events = await get_user_events(user_name, session=session, access_token=access_token)
     repos_from_events = await extract_repos_from_events(events)
@@ -360,24 +357,30 @@ async def get_collaborators(
     user_name: str,
     session: aiohttp.ClientSession,
     access_token: str,
+    batch_size = 100
 ) -> dict[str, set[str]]:
     result: dict[str, set[str]] = defaultdict(set)
 
-    async def process_repository(repository_full_name: str):
-        contributors = await get_contributors(
-            repository_full_name, session=session, access_token=access_token
-        )
-        if user_name in contributors:
-            for contributor in contributors:
-                if contributor.lower() != user_name.lower():
-                    result[contributor].add(repository_full_name)
+    async def process_repository(batch: list[str]):
+        tasks = []
+        for repository_full_name in batch:
+            task = asyncio.create_task(get_contributors(
+                repository_full_name, session=session, access_token=access_token
+            ))
+            tasks.append(task)
+        contributors = await asyncio.gather(*tasks)
+        for repo, user in zip(batch, contributors):
+            if user_name in contributors:
+                for contributor in contributors:
+                    if contributor.lower() != user_name.lower():
+                        result[contributor].add(repo)
 
     repository_full_names = await get_repositories_by_user(
         user_name, session=session, access_token=access_token
     )
-
-    tasks = [process_repository(repo) for repo in repository_full_names]
-    await asyncio.gather(*tasks)
+    for i in range(0, len(repository_full_names), batch_size):
+        batch = repository_full_names[i:i+batch_size]
+        await process_repository(batch)
 
     return result
 
