@@ -95,36 +95,33 @@ async def get_contributors(
 
 async def get_recent_committers(
     repository_full_name: str,
-    session: aiohttp.client.ClientSession,
+    session: aiohttp.ClientSession,
     access_token: str,
-) -> list[str]:
+    max_retries: int = 3,
+    delay: float = 1.0
+) -> List[str]:
+
+    # Check cache first
+    if repository_full_name in commiters_cache:
+        logger.info(f"Using cached recent committers for {repository_full_name}")
+        return commiters_cache[repository_full_name]
+
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {access_token}",
         "X-GitHub-Api-Version": "2022-11-28",
     }
-    if repository_full_name in commiters_cache:
-        logger.info(f"Using cached recent committers for {repository_full_name}")
-        return commiters_cache[repository_full_name]
-
-    # TODO: check larger number of commits
     url = f"https://api.github.com/repos/{repository_full_name}/commits?per_page=100"
+
     await rate_limiter.wait()
 
-    max_retries = 5  # maximum number of retries
-    retry_count = 0
-    backoff_factor = 2  # exponential backoff factor
-
-    while True:
+    for attempt in range(max_retries):
         try:
             async with session.get(url, headers=headers) as response:
+                logger.info(f"Get recent committers for {repository_full_name}: {response.status}")
+
                 if response.status == 200:
-
-                    logger.info(
-                        f"Get recent committers for {repository_full_name}: {response.status}"
-                    )
                     commits = await response.json()
-
                     contributors = set()
                     for commit in commits:
                         login = (commit.get("author") or {}).get("login")
@@ -132,57 +129,43 @@ async def get_recent_committers(
                             login = (commit.get("committer") or {}).get("login")
                         if login is not None:
                             contributors.add(login.lower())
-                        commiters_cache[repository_full_name] = list(contributors)
-                        return list(contributors)
+                    commiters_cache[repository_full_name] = list(contributors)
+                    return list(contributors)
 
                 elif response.status == 403 or response.status == 429:
-                    print(await response.json())
                     json_response = await response.json()
                     if "rate limit" in json_response.get("message", ""):
-                        await RateLimiter.handle_rate_limit(response=response)
+                        await RateLimiter.handle_rate_limit(response)
                         continue
+
                 elif response.status in (204, 404, 451):
                     return []
-                else:
-                    response.raise_for_status()
-                if response.status != 200:
-                    print(response.status)
-                    raise Exception(response.content)
+
+                response.raise_for_status()
+
         except aiohttp.ClientConnectionError as e:
-            logger.error(
-                f"Error getting recent committers for {repository_full_name}: {str(e)}"
-            )
-            if retry_count < max_retries:
-                sleep_time = backoff_factor**retry_count
-                logger.info(
-                    f"Retrying in {sleep_time} seconds due to connection error: {str(e)}"
-                )
-                await asyncio.sleep(sleep_time)
-                retry_count += 1
+            logger.error(f"Error getting recent committers for {repository_full_name}: {str(e)}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(delay * (2**attempt))
                 continue
             else:
                 logger.info(f"Max retries reached for {repository_full_name}")
                 return []
+
         except aiohttp.ClientResponseError as e:
-            logger.error(
-                f"Error getting recent committers for {repository_full_name}: {str(e)}"
-            )
-            if retry_count < max_retries:
-                sleep_time = backoff_factor**retry_count
-                logger.info(
-                    f"Retrying in {sleep_time} seconds due to response error: {str(e)}"
-                )
-                await asyncio.sleep(sleep_time)
-                retry_count += 1
+            logger.error(f"Error getting recent committers for {repository_full_name}: {str(e)}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(delay * (2**attempt))
                 continue
             else:
                 logger.info(f"Max retries reached for {repository_full_name}")
                 return []
+
         except Exception as e:
-            logger.error(
-                f"Error getting recent committers for {repository_full_name}: {str(e)}"
-            )
+            logger.error(f"Error getting recent committers for {repository_full_name}: {str(e)}")
             return []
+
+    raise Exception("Max retries exceeded")
 
 
 # async def get_repositories_by_user(
@@ -355,32 +338,26 @@ async def get_repositories_by_user(
 
 async def get_collaborators(
     user_name: str,
-    session: aiohttp.ClientSession,
-    access_token: str,
-    batch_size = 100
+    session: aiohttp.ClientSession = None,
+    access_token: str = None,
 ) -> dict[str, set[str]]:
     result: dict[str, set[str]] = defaultdict(set)
 
-    async def process_repository(batch: list[str]):
-        tasks = []
-        for repository_full_name in batch:
-            task = asyncio.create_task(get_contributors(
-                repository_full_name, session=session, access_token=access_token
-            ))
-            tasks.append(task)
-        contributors = await asyncio.gather(*tasks)
-        for repo, user in zip(batch, contributors):
-            if user_name in contributors:
-                for contributor in contributors:
-                    if contributor.lower() != user_name.lower():
-                        result[contributor].add(repo)
+    async def process_repository(repository_full_name: str):
+        contributors = await get_contributors(
+            repository_full_name, session=session, access_token=access_token
+        )
+        if user_name in contributors:
+            for contributor in contributors:
+                if contributor.lower() != user_name.lower():
+                    result[contributor].add(repository_full_name)
 
     repository_full_names = await get_repositories_by_user(
         user_name, session=session, access_token=access_token
     )
-    for i in range(0, len(repository_full_names), batch_size):
-        batch = repository_full_names[i:i+batch_size]
-        await process_repository(batch)
+
+    tasks = [process_repository(repo) for repo in repository_full_names]
+    await asyncio.gather(*tasks)
 
     return result
 
