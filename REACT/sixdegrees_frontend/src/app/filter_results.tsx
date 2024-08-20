@@ -9,7 +9,7 @@
 const filterResults = (results: any) => {
   return results.map((item: any) => {
     if (item[0]) {
-      return [[item[0][item[0].length - 1]], item[1]];
+      return [item[0][item[0].length - 1], item[1]];
     }
     return item;
   });
