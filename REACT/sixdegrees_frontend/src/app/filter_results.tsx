@@ -1,4 +1,4 @@
-// utils.js
+// utils.tsx
 
 /**
  * Filters the results to include only the last repository link for each user.
@@ -6,10 +6,10 @@
  * @returns {Array} - The filtered results array.
  */
 
-const filterResults = (results) => {
-  return results.map((item) => {
+const filterResults = (results: any) => {
+  return results.map((item: any) => {
     if (item[0]) {
-      return [[item[0][item[0].length - 1]], item[1]];
+      return [item[0][item[0].length - 1], item[1]];
     }
     return item;
   });
