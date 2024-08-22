@@ -12,7 +12,7 @@ USERNAME = "torvalds"
 
 rate_limiter = RateLimiter(max_requests=900, period=60)
 
-events_to_include = ["PushEvent", "CreateEvent", "MemberEvent"]
+events_to_include = ["PushEvent", "CreateEvent", "PullRequestEvent"]
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ async def extract_repos_from_events(events):
     if events is None:
         return repos
     for event in events:
-        # if event["type"] in events_to_include:
+        if event["type"] in events_to_include:
             repos.add(event["repo"]["name"])
 
     return repos

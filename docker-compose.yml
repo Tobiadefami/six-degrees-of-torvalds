@@ -1,8 +1,8 @@
-version: '3.8'
+version: "3.8"
 
 services:
   backend:
-    image: tobiadefami/six-degrees-of-torvalds-backend:v1.03.1
+    image: tobiadefami/six-degrees-of-torvalds-backend:v2.0
     build: ./sixdegrees
     volumes:
       - ./sixdegrees:/app/sixdegrees
@@ -16,16 +16,16 @@ services:
     network_mode: host
 
   frontend:
-    image: tobiadefami/six-degrees-of-torvalds-frontend:v1.03.2
-    build: ./REACT/sixdegrees
+    image: tobiadefami/six-degrees-of-torvalds-frontend:v2.0
+    build: ./sixdegrees_frontend
     volumes:
-      - ./REACT/sixdegrees:/app
+      - ./sixdegrees_frontend:/app
 
-    command: npm start
+    command: npm run dev
     network_mode: host
 
   nginx:
-    image: tobiadefami/six-degrees-of-torvalds-nginx:v1.03
+    image: tobiadefami/six-degrees-of-torvalds-nginx:v2.0
     build: ./nginx
     volumes:
       - ./nginx/default.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
@@ -33,7 +33,5 @@ services:
     depends_on:
       - backend
       - frontend
-    
+
     network_mode: host
-
-

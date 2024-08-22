@@ -14,26 +14,27 @@ from sixdegrees.rate_limiter import RateLimiter
 from sixdegrees.filtering_conditions import filter_repos
 from cachetools import TTLCache
 
+#TODO: it would be nice to show what kind of contributions a user has made to a repository instead of just showing that the user has contributed to the repository
 
 GITHUB_API_KEY = os.getenv("GITHUB_API_KEY")
 NEXT_PATTERN = re.compile(r'(?<=<)([\S]*)(?=>; rel="next")', re.IGNORECASE)
 
 rate_limiter = RateLimiter(max_requests=900, period=60)
 
-EXCLUDE = {"gitter-badger", "dependabot[bot]", "renovate[bot]", "mergify[bot]"}
+EXCLUDE = {"gitter-badger", "dependabot[bot]", "renovate[bot]", "mergify[bot]", "renovate-bot"}
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-contributors_cache = TTLCache(maxsize=100000, ttl=86400)
-commiters_cache = TTLCache(maxsize=100000, ttl=86400)
+contributors_cache = TTLCache(maxsize=500000, ttl=86400)
+commiters_cache = TTLCache(maxsize=500000, ttl=86400)
 
 
 async def get_contributors(
     repository_full_name: str,
     session: aiohttp.ClientSession,
     access_token: str,
-    max_retries: int = 3,
+    max_retries: int = 5,
     delay: float = 1.0
 ) -> List[str]:
 
@@ -66,6 +67,7 @@ async def get_contributors(
                     contributors_cache[repository_full_name] = contributors
                     return contributors
 
+
                 if response.status == 403:
                     json_response = await response.json()
                     if "too large" in json_response.get("message", ""):
@@ -81,14 +83,14 @@ async def get_contributors(
 
         except aiohttp.ClientConnectionError as e:
             logger.error(f"Connection error, attempt {attempt + 1} of {max_retries}: {str(e)}")
-            if attempt < max_retries - 1:
+            if attempt < max_retries-1:
                 await asyncio.sleep(delay * (2**attempt))
             else:
                 raise
 
         except Exception as e:
             logger.error(f"An error occurred on attempt {attempt + 1}: {str(e)}")
-            if attempt >= max_retries - 1:
+            if attempt >= max_retries-1:
                 raise
 
     raise Exception("Max retries exceeded")
@@ -97,7 +99,7 @@ async def get_recent_committers(
     repository_full_name: str,
     session: aiohttp.ClientSession,
     access_token: str,
-    max_retries: int = 3,
+    max_retries: int = 5,
     delay: float = 1.0
 ) -> List[str]:
 
@@ -145,7 +147,7 @@ async def get_recent_committers(
 
         except aiohttp.ClientConnectionError as e:
             logger.error(f"Error getting recent committers for {repository_full_name}: {str(e)}")
-            if attempt < max_retries - 1:
+            if attempt < max_retries-1:
                 await asyncio.sleep(delay * (2**attempt))
                 continue
             else:
@@ -154,7 +156,7 @@ async def get_recent_committers(
 
         except aiohttp.ClientResponseError as e:
             logger.error(f"Error getting recent committers for {repository_full_name}: {str(e)}")
-            if attempt < max_retries - 1:
+            if attempt < max_retries-1:
                 await asyncio.sleep(delay * (2**attempt))
                 continue
             else:
@@ -168,100 +170,7 @@ async def get_recent_committers(
     raise Exception("Max retries exceeded")
 
 
-# async def get_repositories_by_user(
-#     user_name: str,
-#     results_per_page: int = 100,
-#     type: str = "all",
-#     session: aiohttp.client.ClientSession = None,
-#     max_retries: int = 5,
-#     delay: float = 1.0,
-#     access_token: str = None,
-# ) -> list[str]:
-#     headers = {
-#         "Accept": "application/vnd.github+json",
-#         "Authorization": f"Bearer {access_token}",
-#         "X-GitHub-Api-Version": "2022-11-28",
-#     }
-#     await rate_limiter.wait()
-#     url = f"https://api.github.com/users/{user_name}/repos?type={type}?&per_page={results_per_page}"
 
-#     attempt = 0
-#     results = []
-
-#     events = await get_user_events(
-#         user_name, session=session, access_token=access_token
-#     )
-#     repos_from_events = await extract_repos_from_events(events)
-
-#     while attempt < max_retries:
-#         async with session.get(url, headers=headers) as response:
-#             try:
-#                 logger.info(f"Getting repos for {user_name}: {response.status}")
-#                 if response.status in (403,):
-#                     json_response = await response.json()
-#                     print(json_response)
-#                     if "rate limit" in json_response.get("message", ""):
-#                         await RateLimiter.handle_rate_limit(response=response)
-#                         continue
-#                 if response.status in (204, 403, 404):
-#                     return []
-
-#                 if response.status != 200:
-#                     logger.info(response.status)
-#                     raise Exception(response.content)
-#                 try:
-#                     json_data = await response.json()
-#                     if isinstance(json_data, list):
-#                         results.extend(json_data)
-#                     else:
-#                         logger.info("Unexpected json data", json_data)
-
-#                 except Exception as e:
-#                     logger.error("Error parsing json", str(e))
-#                     continue
-
-#                 header = response.headers.get("Link", "")
-#                 next_link = NEXT_PATTERN.search(header)
-
-#                 while next_link:
-#                     try:
-#                         async with session.get(
-#                             next_link.group(0), headers=headers
-#                         ) as response:
-#                             json_data = await response.json()
-#                             if isinstance(json_data, list):
-#                                 results.extend(json_data)
-#                             else:
-#                                 logger.info("Unexpected json data", json_data)
-
-#                             header = response.headers.get("Link")
-#                             next_link = NEXT_PATTERN.search(header)
-#                     except Exception as e:
-#                         logger.error("Error getting next page", str(e))
-#                         continue
-
-
-#                 repos = [
-#                     repo["full_name"]
-#                     for repo in results
-#                     if isinstance(repo, dict) and filter_repos(repo)
-#                 ]
-#                 print(f"Found repos: {repos}")
-#                 for repository in repos_from_events:
-#                     if repository not in repos:
-#                         repos.append(repository)
-#                 print(f"LENGTH OF REPOS {len(repos)}")
-#                 return repos
-
-#             except Exception as e:
-#                 logger.error(f"Error getting repos for {user_name}: {str(e)}")
-#                 attempt += 1
-#                 await asyncio.sleep(delay * (5**attempt))
-#                 if attempt >= max_retries:
-#                     raise
-
-#     raise Exception("Max retries exceeded")
-#
 async def get_repositories_by_user(
     user_name: str,
     session: aiohttp.ClientSession,
@@ -304,7 +213,7 @@ async def get_repositories_by_user(
             except Exception as e:
                 logger.error(f"Error fetching repos page, attempt {attempt + 1}: {str(e)}")
                 attempt += 1
-                if attempt >= max_retries:
+                if attempt >= max_retries-1:
                     raise
                 await asyncio.sleep(delay * (2**attempt))
         raise Exception("Max retries exceeded")
@@ -314,6 +223,7 @@ async def get_repositories_by_user(
         next_url = f"https://api.github.com/users/{user_name}/repos?type=all&per_page=100"
 
         while next_url:
+            logger.info(f"Fetching repos page for {user_name}: {next_url}")
             repos, next_url = await fetch_page(next_url)
             all_repos.extend(repos)
 
@@ -344,9 +254,11 @@ async def get_collaborators(
     result: dict[str, set[str]] = defaultdict(set)
 
     async def process_repository(repository_full_name: str):
+
         contributors = await get_contributors(
             repository_full_name, session=session, access_token=access_token
         )
+
         if user_name in contributors:
             for contributor in contributors:
                 if contributor.lower() != user_name.lower():
@@ -363,7 +275,7 @@ async def get_collaborators(
 
 
 async def main(user_name: str):
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
         repositories = await get_repositories_by_user(
             user_name, session=session, access_token=GITHUB_API_KEY
         )
