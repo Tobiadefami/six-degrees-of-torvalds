@@ -15,14 +15,17 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 # Ensure poetry is in the PATH
 ENV PATH="/root/.local/bin:$PATH"
 
+# Disable virtualenv creation
+RUN poetry config virtualenvs.create false
+
 # Copy the pyproject.toml and poetry.lock files to the container
 COPY pyproject.toml poetry.lock /app/
 
 # Install the dependencies, updating the lock file if necessary
-RUN poetry config virtualenvs.create false \
-    && poetry lock --no-update \
+RUN poetry lock --no-update \
     && poetry install --only main
 
+RUN python3 -m pip install cachetools
 # Copy the rest of the application code to the container
 COPY . /app/sixdegrees
 
