@@ -18,10 +18,10 @@ interface ComponentProps {
   user: any;
   username: any;
   error: string;
-  noConnection: boolean;
+  noResult: boolean;
   submittedUsername: string;
   setSubmittedUsername: (submittedUsername: string) => void;
-  setNoConnection: (noConnection: boolean) => void;
+  setNoResults: (noResults: boolean) => void;
   setError: (error: string) => void;
   setUsername: (username: string) => void;
   onLogin: () => void;
@@ -44,8 +44,8 @@ export function GitHubConnections({
   setUsername,
   error,
   setError,
-  noConnection,
-  setNoConnection,
+  noResult,
+  setNoResults,
   submittedUsername,
   setSubmittedUsername,
   isLoading,
@@ -125,7 +125,7 @@ export function GitHubConnections({
                 id="username"
                 type="text"
                 placeholder={`e.g., ${defaultUsername}`}
-                defaultValue={user?.login}
+                value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full"
               />
@@ -142,7 +142,7 @@ export function GitHubConnections({
               </CardHeader>
               <CardContent>
                 <p className="mb-4">
-                  To use Six Degrees of Torvalds, you need to log in with your
+                  To use Degrees of Torvalds, you need to log in with your
                   GitHub account. This allows us to access public GitHub data
                   and find connections accurately.
                 </p>
@@ -169,7 +169,7 @@ export function GitHubConnections({
               <CardContent className="flex justify-center p-0">
                 {isLoading ? (
                   <Loader />
-                ) : noConnection ? (
+                ) : noResult ? (
                   <div className="flex flex-col items-center text-center">
                     <div className="relative w-[300px] h-[300px] mb-4">
                       <Image
