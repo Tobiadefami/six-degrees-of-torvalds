@@ -1,36 +1,29 @@
-/**
- * v0 by Vercel.
- * @see https://v0.dev/t/rVoCeI9MzAG
- * Documentation: https://v0.dev/docs#integrating-generated-code-into-your-nextjs-app
- */
+// six-degrees-of-torvalds/sixdegrees_frontend/src/app/page.tsx
 "use client";
-
+import { useCallback } from "react";
 import React, { useEffect, useState } from "react";
 import api from "./api";
 import filterResults from "./FilterResults";
 import queryString from "query-string";
-import Link from "next/link";
 import { GitHubConnections } from "@/components/component";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-
+import { setTimeout, clearTimeout } from "timers";
 interface User {
   login: string;
 }
 
+const DEFAULT_USERNAME = "octocat";
+
 export default function Home() {
-  const [user, setUser] = useState(null);
-  const [username, setUsername] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState(DEFAULT_USERNAME);
   const [connections, setConnections] = useState([
     [null, "octocat"],
     ["gamify/switchboard", "gamify"],
     ["torvalds/linux", "torvalds"],
   ]);
   const [error, setError] = useState("");
-  const [submittedUsername, setSubmittedUsername] = useState("octocat");
-  const [noConnection, setNoConnection] = useState(false);
+  const [submittedUsername, setSubmittedUsername] = useState(DEFAULT_USERNAME);
+  const [noResult, setNoResults] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
@@ -39,7 +32,6 @@ export default function Home() {
       try {
         const response = await api.get("user");
         setUser(response.data);
-        // setUsername(response.data.login);
       } catch (error) {
         console.error("Error fetching user:", error);
       }
@@ -52,6 +44,14 @@ export default function Home() {
     }
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      setUsername(user.login);
+    } else {
+      setUsername(DEFAULT_USERNAME);
+    }
+  }, [user]);
+
   const fetchAccessToken = async (code: string) => {
     try {
       const response = await api.get(`callback?code=${code}`);
@@ -61,6 +61,7 @@ export default function Home() {
       console.error("Error fetching access token:", error);
     }
   };
+
   const handleLogin = () => {
     const loginUrl = "/api/login";
     window.location.href = loginUrl;
@@ -70,70 +71,70 @@ export default function Home() {
     try {
       await api.get("/logout");
       setUser(null);
+      setUsername(DEFAULT_USERNAME);
       window.location.href = "/";
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user) {
-      setShowLoginPrompt(true);
-    } else {
-      setNoConnection(false);
-      setIsLoading(true);
-      setSubmittedUsername(username);
-      console.log(username);
-      api
-        .post(`/search/${username}`)
-        .then((response) => {
-          const filtered = filterResults(response.data);
-          setSubmittedUsername(username);
-          if (filtered.length === 0) {
-            setNoConnection(true);
-          } else {
-            setConnections(filtered);
-          }
-        })
-        .catch((err) => {
-          console.error("Error fetching data:", err);
-          if (err.response) {
-            setError(
-              `Error: ${err.response.status} - ${err.response.data.detail}`,
-            );
-          } else if (err.request) {
-            setError(
-              "No response received. Check if the backend server is running.",
-            );
-          } else {
-            setError(`Request error: ${err.message}`);
-          }
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  };
+  const handleSubmit = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!user) {
+        setShowLoginPrompt(true);
+      } else {
+        setNoResults(false);
+        setIsLoading(true);
+        const normalizedUsername = username.toLowerCase();
+        setSubmittedUsername(normalizedUsername);
+        console.log(normalizedUsername);
+        api
+          .post(`/search/${normalizedUsername}`)
+          .then((response) => {
+            const filtered = filterResults(response.data);
+            if (filtered.length === 0) {
+              setNoResults(true);
+            } else {
+              setConnections(filtered);
+            }
+          })
+          .catch((err) => {
+            console.error("Error fetching data:", err);
+            if (err.response) {
+              setError(
+                `Error: ${err.response.status} - ${err.response.data.detail}`,
+              );
+            } else if (err.request) {
+              setError(
+                "No response received. Check if the backend server is running.",
+              );
+            } else {
+              setError(`Request error: ${err.message}`);
+            }
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      }
+    },
+    [user, username],
+  ); // Dependencies
 
-  // const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-  //   if (e.key === "Enter") {
-  //     handleSubmit();
-  //   }
   return (
     <div>
       <GitHubConnections
         appName="GitHub Connections"
         currentYear={2024}
-        defaultUsername="octocat"
+        defaultUsername={DEFAULT_USERNAME}
         connections={connections}
         user={user}
         username={username}
         setUsername={setUsername}
         error={error}
         setError={setError}
-        noConnection={noConnection}
-        setNoConnection={setNoConnection}
+        noResult={noResult}
+        setNoResults={setNoResults}
         onLogin={handleLogin}
         onLogout={handleLogout}
         onSubmit={handleSubmit}
