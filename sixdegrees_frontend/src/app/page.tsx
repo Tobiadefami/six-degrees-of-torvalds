@@ -12,6 +12,7 @@ interface User {
 }
 
 const DEFAULT_USERNAME = "octocat";
+const repoUrl = "https://github.com/Tobiadefami/six-degrees-of-torvalds";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -124,6 +125,7 @@ export default function Home() {
   return (
     <div>
       <GitHubConnections
+        repoUrl={repoUrl}
         appName="GitHub Connections"
         currentYear={2024}
         defaultUsername={DEFAULT_USERNAME}
