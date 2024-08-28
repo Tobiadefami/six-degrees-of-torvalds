@@ -11,6 +11,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Puritan } from "next/font/google";
 
 interface ComponentProps {
+  repoUrl: string;
   appName: string;
   currentYear: number;
   defaultUsername: string;
@@ -52,6 +53,7 @@ export function GitHubConnections({
   showLoginPrompt,
   setShowLoginPrompt,
   onSubmit,
+  repoUrl,
 }: ComponentProps) {
   const Loader: React.FC = () => {
     const [dots, setDots] = useState("");
@@ -251,6 +253,14 @@ export function GitHubConnections({
               prefetch={false}
             >
               How it Works
+            </Link>
+            <Link
+              href={repoUrl}
+              className="text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-card-foreground"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
             </Link>
           </div>
         </div>
