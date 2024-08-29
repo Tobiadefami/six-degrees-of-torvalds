@@ -3,7 +3,7 @@ from re import S
 import aiohttp
 from sixdegrees.get_user_contributions import get_collaborators
 from typing import TypeAlias
-from sixdegrees.load_cache import load_cache, load_second_cache
+from sixdegrees.load_cache import load_cache
 import os
 import json
 from sqlitedict import SqliteDict
@@ -19,7 +19,6 @@ goal_state = ["torvalds"]
 
 GITHUB_TOKEN = os.getenv("GITHUB_API_KEY")
 NEW_CACHE_FILE = "sixdegrees/second_cache.sqlite"
-# CACHE: dict[User, Path] = load_cache()
 CACHE: dict[User, Path] = SqliteDict("sixdegrees/cache.sqlite")
 SECOND_CACHE: dict[User, Path] = SqliteDict(NEW_CACHE_FILE, autocommit=True)
 

@@ -5,12 +5,13 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import OAuth2AuthorizationCodeBearer
+from fastapi.security.http import HTTPAuthorizationCredentials
 from httpx import AsyncClient
 from starlette.middleware.sessions import SessionMiddleware
-
+from sixdegrees.get_user_contributions import get_collaborators
 from sixdegrees.custom_rate_limiter import is_rate_limited
 from sixdegrees.find_connection import find_connection
-
+import aiohttp
 from urllib.parse import parse_qs
 
 
@@ -60,8 +61,8 @@ async def search_user(username: str, request: Request):
     connection = await find_connection(
         [(username, None)], access_token=request.session["access_token"]
     )
+    print(f"{connection=}")
     return connection
-
 
 @app.get("/login")
 def login():
